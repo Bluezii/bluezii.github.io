@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bluezii Portfolio</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:,">
+<!-- Phương án A (anh 09/11/2026 "thử test A"): phòng render trực tiếp bằng three.js. Ánh sáng đã bake 1 lần trong Blender vào 2 atlas,
+     web vẽ không đèn nên nhẹ và luôn sắc theo màn hình. Màn PVM là màn hình sống (canvas). Cuộn = máy quay đi theo đường giống bản B. -->
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;1,400&family=VT323&display=swap" rel="stylesheet">
+<!-- phương án B: 4 font của hệ chữ trộn (như web trắng) cho khung chữ chung trên các cảnh 3D; &text= chỉ lấy đúng các chữ cần dùng cho nhẹ -->
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wdth,wght@62..125,700..900&family=Space+Mono:wght@400;700&family=UnifrakturCook:wght@700&display=swap&text=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789%20.%2C%3A%3B%C2%B7%2F%E2%80%94-%E2%80%93%26%27%22%3F%21%25%E2%86%93%E2%86%91%E2%86%90%E2%86%92%E2%86%97%E2%80%A6%C4%90%C3%8A%E1%BA%B6%C3%94%C4%82%5B%5D%28%29%2B" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root { --chu: #f1ede6; --mo: rgba(241, 237, 230, .62); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #000; color: var(--chu); overscroll-behavior: none; }   /* sửa 13/11: vuốt xuống ở đầu trang trên Android không còn kéo-để-tải-lại */
+  body { font: 500 13px/1.45 "IBM Plex Mono", ui-monospace, monospace; }
+  canvas#gl, canvas#phu { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  canvas#phu { pointer-events: none; z-index: 2; }
+  .goc { position: fixed; z-index: 3; opacity: 0; transition: opacity .9s; text-shadow: 0 1px 12px rgba(0, 0, 0, .6); }
+  .hien .goc { opacity: 1; }
+  .goc.tt { top: 34px; left: 40px; } .goc.tt b { display: block; font-size: 22px; letter-spacing: .05em; font-weight: 500; }
+  .tp { top: 34px; right: 40px; text-align: right; max-width: 300px; color: var(--mo); }
+  .dt { bottom: 34px; left: 40px; }
+  .dp { bottom: 34px; right: 40px; color: var(--mo); font: inherit; background: none; border: 0; cursor: pointer; }
+  .dp[aria-pressed="true"] { color: var(--chu); }
+  .goc .mo { color: var(--mo); }   /* gop-3: gói vào .goc để không đè lớp .mo (trạng thái mở) của bảo tàng */
+  #the { position: fixed; inset: 0; z-index: 4; display: grid; place-items: center; background: #06080d; opacity: 0; pointer-events: none; }
+  #the b { display: block; font-size: clamp(28px, 6vw, 64px); letter-spacing: .06em; font-weight: 500; text-align: center; }
+  #the span { display: block; text-align: center; }
+  #tai { position: fixed; inset: 0; z-index: 5; display: grid; place-items: center; background: #000; color: #8a8f99; transition: opacity .6s; }
+  #tai.xong { opacity: 0; pointer-events: none; }
+  /* gộp scene 2: đang ở trong não thì ẩn phòng + chữ góc của phòng, giữ nút Sound */
+  body.nao canvas#gl, body.nao canvas#phu { visibility: hidden; }
+  body.nao .goc:not(.dp) { opacity: 0 !important; }
+  body.nao .dp { z-index: 14; color: rgba(255,233,240,.75); }
+  #the { background: #fff; color: #4a3a44; transition: none; }
+  #the .mo { color: #8a7a84; letter-spacing: .12em; text-transform: uppercase; font-size: 11px; }
+  #do { position: fixed; z-index: 6; top: 6px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.6); padding: 2px 8px; display: none; }
+  /* gop-3: scene 3 bảo tàng (#bt3, z 30) + lớp chuyển cảnh (#btVao, z 35) + nút nhạc */
+  body.bt .goc:not(.dp) { opacity: 0 !important; }
+  body.bt .dp { z-index: 40; color: rgba(232,241,240,.72); }
+  body.bt .dp[aria-pressed="true"] { color: #e8f1f0; }
+  canvas#btVao { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 35; pointer-events: none; display: none; }
+  #nutNhac { position: fixed; z-index: 40; right: max(40px, env(safe-area-inset-right, 0px)); bottom: calc(64px + env(safe-area-inset-bottom, 0px)); font: 500 11px/1 "IBM Plex Mono", monospace; letter-spacing: .1em; text-transform: uppercase;
+    color: #e8f1f0; background: rgba(3,8,10,.55); border: 1px solid rgba(156,194,255,.35); border-radius: 999px; padding: 9px 13px; cursor: pointer; opacity: 0; pointer-events: none; transition: opacity .5s, border-color .2s; backdrop-filter: blur(4px); white-space: nowrap; }
+  #nutNhac b { color: #9cc2ff; font-weight: 500; } #nutNhac i { font-style: normal; opacity: .62; }
+  #nutNhac:hover { border-color: #9cc2ff; } #nutNhac:focus-visible { outline: 2px solid #9cc2ff; outline-offset: 2px; }
+  body.btvao #nutNhac { opacity: 1; pointer-events: auto; }
+  @media (max-width: 600px) {
+    #nutNhac { right: 16px; bottom: auto; top: calc(106px + env(safe-area-inset-top, 0px)); font-size: 10px; padding: 7px 10px; }   /* sửa 13/11: cũ 84px đè lên gợi ý "Drag to look around" (64–94px) */
+    .goc.tt { top: 18px; left: 16px; } .tp { top: 18px; right: 16px; max-width: 150px; font-size: 11px; }
+    .dt { bottom: 18px; left: 16px; } .dp { bottom: 18px; right: 16px; font-size: 11px; }
+  }
+</style>
+</head>
+<body>
+<div id="tai"><div>loading <span id="phan">0</span>%</div></div>
+<canvas id="gl"></canvas><canvas id="phu"></canvas>
+<div class="goc tt"><b>BLUEZII</b><span class="mo">// Trung Hieu · Ha Noi</span></div>
+<div class="goc tp">About me</div>
+<div class="goc dt">Scroll to step inside my head.<br><span class="mo" id="nac">00 / 100</span></div>
+<button class="goc dp" id="am" type="button" aria-pressed="false">Sound off</button>
+<div id="the"><div><span class="mo" id="naoTai"></span></div></div>
+<div id="do"></div>
+<div id="nhan" style="position:fixed;z-index:6;pointer-events:none;opacity:0;transition:opacity .2s;background:rgba(8,10,14,.82);border:1px solid rgba(255,255,255,.15);padding:6px 10px;font:500 12px/1.4 'IBM Plex Mono',monospace;color:#f1ede6;white-space:nowrap"></div>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+// tối ưu 13/11: mở thẳng web trắng (index.html#web) thì dừng ở đây, không tải phòng (đỡ ~6 MB + bộ nhớ GPU). Nút "Back to the room" tải lại trang không có #web.
+if (location.hash === '#web') await new Promise(() => {});
+const IT_DONG = matchMedia('(prefers-reduced-motion: reduce)').matches, MOB = innerWidth < 700;
+const ss = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+const cv = document.getElementById('gl'), phu = document.getElementById('phu'), pg = phu.getContext('2d');
+const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: false, powerPreference: 'high-performance' });   // tối ưu 13/11: hình đi qua composer (vẽ 1 tấm phủ màn) nên khử răng cưa của canvas không có tác dụng, chỉ tốn bộ nhớ GPU → tắt
+ renderer.debug.checkShaderErrors = new URLSearchParams(location.search).has('soiShader');   // tối ưu tải 10/11: tắt đọc log shader (làm lần vẽ đầu chậm vài giây); ?soiShader để bật lại khi soi lỗi
+renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 700 ? 1.5 : 2)); renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NoToneMapping;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0);
+const cam = new THREE.PerspectiveCamera(40, 16 / 9, .01, 60);
+const composer = new EffectComposer(renderer); composer.addPass(new RenderPass(scene, cam));
+const bloom = new UnrealBloomPass(new THREE.Vector2(512, 512), .45, .5, .82); composer.addPass(bloom); composer.addPass(new OutputPass());
+let W = 0, H = 0;
+function co() { W = innerWidth; H = innerHeight; renderer.setSize(W, H, false); composer.setSize(W, H); cam.aspect = W / H; cam.updateProjectionMatrix();
+  const d = Math.min(devicePixelRatio, 2); phu.width = W * d; phu.height = H * d; pg.setTransform(d, 0, 0, d, 0, 0); }
+addEventListener('resize', co); co();
+
+// ---------- màn hình sống 1024×768 (giống bản CRT gốc) ----------
+const MW = 1024, MH = 768, man = document.createElement('canvas'); man.width = MW; man.height = MH; const mg = man.getContext('2d');
+const noi = document.createElement('canvas'); noi.width = MW; noi.height = MH; const ng = noi.getContext('2d');
+// anh 09/11: chữ gõ từ từ từng ký tự như máy thật (không hiện cả dòng), có con trỏ khối nhấp nháy, nhịp gõ không đều
+const F_NHO = '22px "IBM Plex Mono", monospace', F_TO = '500 112px "IBM Plex Mono", monospace', F_VUA = '30px "IBM Plex Mono", monospace';
+const XANH = '#6f93c0', TRANG = '#e2efff';
+// [chữ, x, y, font, màu, ký tự/giây, nghỉ sau dòng (s)]
+const KICH_BAN = [
+  ['BLUEZII BIOS v0.8  (c) HA NOI', 60, 72, F_NHO, XANH, 26, .35],
+  ['MEMORY TEST ........ OK', 60, 132, F_NHO, XANH, 22, .25],
+  ['LOADING /memories /music /ink /nights /ideas', 60, 162, F_NHO, XANH, 30, .3],
+  ['> whoami', 60, 192, F_NHO, TRANG, 9, .6],
+  ['TRUNG HIEU', 60, 345, F_TO, TRANG, 7, .25],
+  ['BLUEZII', 60, 475, F_TO, TRANG, 6, .5],
+  ['Creative director. Brands, rooms & nights.', 64, 545, F_VUA, XANH, 24, .5],
+  ['> scroll', 64, 605, F_VUA, TRANG, 10, 0]];
+const MOC = []; { let t = .55; for (const d of KICH_BAN) { MOC.push(t); t += d[0].length / d[5] + d[6]; } }
+const lech = i => .55 + .9 * Math.abs(Math.sin(i * 12.9898) * 43758.5453 % 1);   // nhịp gõ không đều (cố định theo vị trí, không nhảy)
+let soKyTuTruoc = 0, tatTV = -1e9;
+window.__kiemMan = ts => { veManHinh(ts, 0, true); return man.toDataURL('image/jpeg', .6); };   // để chụp kiểm từng mốc gõ chữ
+// tối ưu 13/11: (1) sọc ngang CRT vẽ sẵn 1 lần thành ảnh (trước: 256 lệnh fillRect mỗi khung cho mỗi màn);
+//   (2) màn CRT chỉ vẽ lại khi nội dung đổi (đang gõ, con trỏ nháy, thanh nạp, tắt/bật TV). Hàm trả true nếu vừa vẽ lại → lúc đó mới đẩy ảnh lên GPU.
+const taoSoc = a => { const c = document.createElement('canvas'); c.width = MW; c.height = MH; const g = c.getContext('2d'); g.fillStyle = `rgba(0,0,0,${a})`; for (let y = 0; y < MH; y += 3) g.fillRect(0, y, MW, 1); return c; };
+const SOC_MAN = taoSoc(.28), SOC_PHU = taoSoc(.25), LENH_VAO = '> cd ~/inside-my-head';
+let khoaMan = null;
+function veManHinh(ts, mem, ep = false) {
+  if (ts < 0) { if (khoaMan === 'den' && !ep) return false; khoaMan = 'den'; mg.fillStyle = '#05080d'; mg.fillRect(0, 0, MW, MH); return true; }
+  // bước 1: tính trạng thái (chưa vẽ gì)
+  const ns = KICH_BAN.map((d, k) => { const dt = ts - MOC[k]; if (dt < 0) return -1; const chu = d[0], cps = d[5];
+    let n = 0, acc = 0; while (n < chu.length && acc + lech(k * 97 + n) / cps <= dt) { acc += lech(k * 97 + n) / cps; n++; } return n; });
+  let tong = 0, kTro = -1;
+  ns.forEach((n, k) => { if (n < 0) return; tong += n; if (n < KICH_BAN[k][0].length || k === KICH_BAN.length - 1 || (k + 1 < KICH_BAN.length && ts < MOC[k + 1])) kTro = k; });
+  // ý 3: máy quay tiến vào thì màn gõ thêm lệnh mở dự án đầu tiên, thanh nạp chạy theo cuộn
+  const vao = typeof p === 'number' ? ss(.3, .82, p) : 0, coLenh = vao > 0 && ts > MOC[MOC.length - 1] + 1;
+  const nLenh = coLenh ? Math.min(LENH_VAO.length, Math.floor(vao * 4 * LENH_VAO.length)) : 0, kNap = coLenh && vao > .3 ? ss(.3, 1, vao) : -1;
+  const oNap = kNap < 0 ? -1 : Math.round(kNap * 24), ptNap = kNap < 0 ? -1 : Math.round(kNap * 100);
+  if (coLenh) kTro = -1;
+  const nhay = kTro >= 0 && ((ts * 2.2) | 0) % 2 === 0;
+  if (tong > soKyTuTruoc) { for (let q = soKyTuTruoc; q < tong && q < soKyTuTruoc + 2; q++) tieng('go'); } soKyTuTruoc = tong;   // tiếng gõ phím (nếu bật Sound)
+  let sy = Math.max(.003, Math.pow(ss(0, .45, ts), 2)), sx = Math.max(.02, ss(0, .12, ts));
+  const tv = (performance.now() - tatTV) / 1000;                 // ý 6: tắt kiểu TV cũ → co thành vạch → chấm → tối → bật lại
+  if (tv < 2.2) { if (tv < .18) sy *= 1 - ss(0, .18, tv) * .995; else if (tv < .35) { sy = .004; sx *= 1 - ss(.18, .35, tv) * .99; } else if (tv < 1.5) { sy = 0; sx = 0; }
+    else { sy = Math.max(.003, Math.pow(ss(1.5, 1.95, tv), 2)); sx = Math.max(.02, ss(1.5, 1.62, tv)); } }
+  const loc = mem > .02 ? `blur(${(mem * .5).toFixed(2)}px)` : 'none';
+  const dangDong = tv < 2.3 || ts < .55;                           // đang bật/tắt màn: vẽ mọi khung
+  const khoa = dangDong ? null : ns.join() + '|' + kTro + (nhay ? 'n' : '') + '|' + nLenh + ',' + oNap + ',' + ptNap + '|' + loc;
+  if (!ep && khoa !== null && khoa === khoaMan) return false; khoaMan = khoa;
+  // bước 2: vẽ (y hệt bản cũ)
+  mg.fillStyle = '#05080d'; mg.fillRect(0, 0, MW, MH);
+  ng.fillStyle = '#060a10'; ng.fillRect(0, 0, MW, MH);
+  let conTro = null;
+  KICH_BAN.forEach((d, k) => {
+    const n = ns[k]; if (n < 0) return; const [chu, x, y, font, mau] = d;
+    ng.font = font; ng.fillStyle = mau; ng.fillText(chu.slice(0, n), x, y);
+    if (k === kTro) { const xs = x + ng.measureText(chu.slice(0, n)).width, cao = parseInt(font.match(/(\d+)px/)[1]); conTro = [xs + 2, y - cao * .8, cao * .55, cao * .9, mau]; }
+  });
+  if (coLenh) {
+    ng.font = F_VUA; ng.fillStyle = TRANG; ng.fillText(LENH_VAO.slice(0, nLenh), 64, 660);
+    if (kNap >= 0) { ng.fillStyle = XANH; ng.fillText('[' + '#'.repeat(oNap) + '.'.repeat(24 - oNap) + '] ' + ptNap + '%', 64, 705); }
+  }
+  if (conTro && nhay) { ng.fillStyle = conTro[4]; ng.fillRect(conTro[0], conTro[1], conTro[2], conTro[3]); }
+  ng.drawImage(SOC_MAN, 0, 0);
+  mg.save(); mg.translate(MW / 2, MH / 2); mg.scale(sx, sy); mg.filter = loc;   // chỉ mềm như phosphor CRT, xa thì tự nhỏ
+  mg.drawImage(noi, -MW / 2, -MH / 2); mg.restore(); mg.filter = 'none';
+  if (tv < 1.5 && tv > .3) { const r = 14 * (1 - ss(.35, 1.4, tv)); mg.fillStyle = `rgba(230,240,255,${1 - ss(.35, 1.4, tv)})`; mg.beginPath(); mg.arc(MW / 2, MH / 2, Math.max(.1, r), 0, 6.29); mg.fill(); }
+  if (ts < .5) { mg.fillStyle = `rgba(210,230,255,${(1 - ts / .5) * .9})`; mg.fillRect(MW / 2 - MW * sx / 2, MH / 2 - 3, MW * sx, 6); }
+  return true;
+}
+const tMan2 = new THREE.CanvasTexture(man); tMan2.colorSpace = THREE.SRGBColorSpace; tMan2.flipY = false; tMan2.anisotropy = 8;
+const mMan = new THREE.MeshBasicMaterial({ map: tMan2 });
+const uLuoi = { value: 0 };
+mMan.onBeforeCompile = sh => {                             // lưới điểm ảnh RGB hiện khi máy quay sát màn
+  sh.uniforms.uLuoi = uLuoi;
+  sh.fragmentShader = 'uniform float uLuoi;\n' + sh.fragmentShader.replace('#include <map_fragment>', `#include <map_fragment>
+    vec2 px = vMapUv * vec2(${MW}.0, ${MH}.0); vec2 o = fract(px); float k = floor(o.x * 3.0);
+    vec3 m = k < 1.0 ? vec3(1.0, .08, .08) : (k < 2.0 ? vec3(.08, 1.0, .08) : vec3(.08, .08, 1.0));
+    float khe = smoothstep(0.0, .12, o.y) * smoothstep(1.0, .88, o.y) * smoothstep(0.0, .15, fract(o.x * 3.0)) * smoothstep(1.0, .85, fract(o.x * 3.0));
+    diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * m * 2.6 * khe, uLuoi);`);
+};
+
+// ---------- nạp phòng (GLB meshopt assets/phong.wasm, ảnh webp riêng) ----------
+const PHAN = document.getElementById('phan'), dsVL = [], BIA = []; let MAN_PVM_MESH = null, MAN_PHU_MESH = null;
+const mgr = new THREE.LoadingManager(); mgr.onProgress = (u, a, b) => { PHAN.textContent = Math.round(a / b * 100); };
+const loader = new GLTFLoader(mgr);
+// tối ưu tải 10/11: phòng là GLB nén meshopt đổi đuôi .wasm (artifact cho fetch .wasm; trước đây nhúng base64 trong phong-bin.js 9,9 MB → nay 2,3 MB).
+// GLB không chứa ảnh: ảnh vẫn là file webp ngoài, nạp bằng thẻ <img> (TextureLoader) như cũ. Điện thoại: atlas + tranh bản -dt (1/2 cạnh).
+loader.setMeshoptDecoder(MeshoptDecoder);
+// tối ưu 13/11: 2 atlas 8192² chiếm ~680 MB bộ nhớ GPU. Dùng bản 4096² (-dt) khi: điện thoại, card không nhận ảnh 8K, máy ≤ 4 GB RAM,
+//   hoặc màn hình ≤ 1440 điểm ảnh thật theo bề ngang (đo ở 1280×800: lệch trung bình < 1/255 mức màu, mắt không thấy). ?atlas8k để ép bản 8K, ?atlas4k ép bản 4K.
+const QS1 = new URLSearchParams(location.search);
+const ATLAS_NHO = !QS1.has('atlas8k') && (MOB || QS1.has('atlas4k') || renderer.capabilities.maxTextureSize < 8192 || (navigator.deviceMemory || 8) <= 4 || innerWidth * devicePixelRatio <= 1440);
+// ảnh của 2 màn hình (man.webp, anh-man-phu-43.webp) bị thay ngay bằng canvas sống → trả ảnh 1 điểm, khỏi tải 60 KB
+const ANH_1PX = 'data:image/webp;base64,UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA';
+mgr.setURLModifier(u => /(^|\/)(man|anh-man-phu-43)\.webp$/.test(u) ? ANH_1PX : (MOB && /(atlas_lon|atlas_nho|\/t\d)\.webp$/.test(u)) || (ATLAS_NHO && /atlas_(lon|nho)\.webp$/.test(u)) ? u.replace(/\.webp$/, '-dt.webp') : u);
+mgr.itemStart('phong.wasm');
+const glb = await fetch('assets/phong.wasm').then(r => { if (!r.ok) throw new Error('phong.wasm ' + r.status); return r.arrayBuffer(); });
+mgr.itemEnd('phong.wasm');
+loader.register(parser => { parser.textureLoader = new THREE.TextureLoader(parser.options.manager); return { name: 'nap_anh_bang_img' }; });
+const gltf = await loader.parseAsync(glb, 'assets/');
+const CHAN = []; gltf.scene.traverse(o => { if (o.isMesh && o.name.startsWith('bake')) CHAN.push(o); });
+// anh 09/11: ở 00 phòng chưa sáng; cuộn thì phòng hiện dần → vật hiện theo sóng tròn lan ra từ màn CRT
+const uHien = { uR: { value: 0 }, uC: { value: new THREE.Vector3() }, uMep: { value: 1 } };
+function hienDan(m) {
+  m.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, uHien);
+    sh.vertexShader = 'varying vec3 vTG;\n' + sh.vertexShader.replace('#include <project_vertex>', '#include <project_vertex>\n vTG = (modelMatrix * vec4(transformed, 1.0)).xyz;');
+    sh.fragmentShader = 'uniform float uR, uMep; uniform vec3 uC; varying vec3 vTG;\n' + sh.fragmentShader.replace('#include <dithering_fragment>', `#include <dithering_fragment>
+      float dd = distance(vTG, uC);
+      if (dd > uR + .01) discard;
+      gl_FragColor.rgb *= smoothstep(uR, uR - .35, dd);
+      gl_FragColor.rgb += vec3(.35, .62, 1.0) * smoothstep(.06, 0.0, abs(dd - uR)) * uMep;`);
+  };
+  return m;
+}
+gltf.scene.traverse(o => {
+  if (!o.isMesh) return;
+  const cu = o.material, map = cu.map || null;
+  if (o.name.startsWith('MAN_PVM')) { o.material = mMan; MAN_PVM_MESH = o; return; }
+  if (o.name.startsWith('KINH_')) { o.material = hienDan(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: .07, depthWrite: false })); return; }
+  const bake = cu.name.startsWith('bake_');
+  if (map) { map.anisotropy = 8; }
+  const m = new THREE.MeshBasicMaterial({ map, color: bake ? 0xffffff : 0xb8aa98, side: THREE.FrontSide });   // mặt ảnh (bìa, tranh) chưa bake: nhuộm ấm cho hợp ánh phòng
+  if (cu.name.startsWith('man_phu')) { m.color.set(0xffffff); MAN_PHU_MESH = o; }
+  if (cu.name.startsWith('bia_that')) BIA.push({ o, m, goc: o.position.clone(), q0: o.quaternion.clone(), ten: (map && map.image && map.image.src || '').split('/').pop(), nhac: 0 });
+  o.material = hienDan(m); dsVL.push(m);
+});
+scene.add(gltf.scene);
+
+// anh 09/11: 2 đầu đĩa → 1 đầu đĩa Pioneer PLX-1000 màu bạc + 1 đầu băng cối. Hai mâm cũ nằm trong lưới đã bake → ẩn đúng tam giác của chúng.
+// anh 09/11 lần 2: còn thấy 2 tấm đế mâm cũ (đế dày 8 cm, đáy ở 0,96 m, lần trước hộp ẩn bắt đầu từ 0,975 nên sót) + bàn phím cũ lọt dưới gầm màn PVM → ẩn cả hai, bàn phím dựng lại phía trước màn
+const HOP_AN = [...[-1.75, -1.15].map(x => new THREE.Box3().setFromPoints([B(x - .245, 1.97, .95), B(x + .245, 2.36, 1.08)])),
+  new THREE.Box3().setFromPoints([B(1.43, 1.875, .765), B(1.87, 2.04, .826)])];
+{ let an = 0; const v = new THREE.Vector3();
+  gltf.scene.traverse(mn => { if (!mn.isMesh || !mn.geometry.index || !mn.name.startsWith('bake')) return; mn.updateMatrixWorld(true);
+    const g = mn.geometry, pos = g.attributes.position, idx = g.index.array;
+    const hopCua = i => { v.fromBufferAttribute(pos, i).applyMatrix4(mn.matrixWorld); return HOP_AN.findIndex(h => h.containsPoint(v)); };
+    for (let f = 0; f < idx.length; f += 3) { const a = hopCua(idx[f]); if (a >= 0 && hopCua(idx[f + 1]) === a && hopCua(idx[f + 2]) === a) { idx[f + 1] = idx[f + 2] = idx[f]; an++; } }
+    g.index.needsUpdate = true; });
+  console.log('an tam giac mam cu + ban phim', an); }
+// vật mới dùng vật liệu có ánh sáng thật (kim loại bạc phản chiếu môi trường) + 1 đèn ấm trên quầy, sáng theo đèn phòng
+const pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(new RoomEnvironment(), .04).texture;
+const denQuay = new THREE.PointLight(0xffc89a, 1.2, 3, 2); denQuay.position.copy(B(-1.9, 1.75, 1.75)); scene.add(denQuay);
+const denQuay2 = new THREE.PointLight(0xff9a70, .5, 3, 2); denQuay2.position.copy(B(-1.0, 1.5, 1.3)); scene.add(denQuay2);
+const dsPBR = [];
+const vlKL = (mau, nham = .32, kl = .9) => { const m = new THREE.MeshStandardMaterial({ color: mau, roughness: nham, metalness: kl, envMapIntensity: .6 }); dsPBR.push(m); return m; };
+const BAC = vlKL(0xc3c6cc, .34), BAC_SANG = vlKL(0xdfe2e6, .2), DEN_NHUA = vlKL(0x141518, .55, .2), DEN_NI = vlKL(0x0b0b0c, .9, 0), CAO_SU = vlKL(0x1c1c1e, .7, 0);
+const hopM = (w, h, d, m, x, y, z, cha) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); cha.add(o); return o; };
+const truM = (r, h, m, x, y, z, cha, n = 48, r2 = r) => { const o = new THREE.Mesh(new THREE.CylinderGeometry(r, r2, h, n), m); o.position.set(x, y, z); cha.add(o); return o; };
+function anhDia(bia, chu) {
+  const c = document.createElement('canvas'); c.width = c.height = 512; const x = c.getContext('2d');
+  x.fillStyle = '#0b0b0c'; x.beginPath(); x.arc(256, 256, 255, 0, 6.29); x.fill();
+  for (let r = 250; r > 92; r -= 3) { x.strokeStyle = `rgba(255,255,255,${.025 + (r % 9 === 0 ? .03 : 0)})`; x.lineWidth = 1; x.beginPath(); x.arc(256, 256, r, 0, 6.29); x.stroke(); }
+  const gr = x.createLinearGradient(0, 0, 512, 512); gr.addColorStop(.42, 'rgba(255,255,255,0)'); gr.addColorStop(.5, 'rgba(255,255,255,.09)'); gr.addColorStop(.58, 'rgba(255,255,255,0)');
+  x.fillStyle = gr; x.beginPath(); x.arc(256, 256, 250, 0, 6.29); x.fill();
+  x.save(); x.beginPath(); x.arc(256, 256, 84, 0, 6.29); x.clip();
+  if (bia) x.drawImage(bia, 172, 172, 168, 168); else { x.fillStyle = '#d8402c'; x.fill(); x.fillStyle = '#fff'; x.font = '700 22px "IBM Plex Mono"'; x.textAlign = 'center'; x.fillText(chu || 'I LIKE YOU', 256, 262); }
+  x.restore(); x.fillStyle = '#ddd'; x.beginPath(); x.arc(256, 256, 5, 0, 6.29); x.fill();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
+}
+// --- Pioneer PLX-1000 (453 × 353 × 159 mm), bạc ---
+const PLX = new THREE.Group(); PLX.position.copy(B(-1.45, 2.17, .96)); scene.add(PLX);
+hopM(.453, .05, .353, DEN_NHUA, 0, .025, 0, PLX);                                   // đế đen
+hopM(.45, .105, .35, BAC, 0, .1025, 0, PLX);                                        // thân bạc
+for (const [x, z] of [[-.2, -.15], [.2, -.15], [-.2, .15], [.2, .15]]) truM(.03, .02, CAO_SU, x, -.0, z, PLX, 24);   // 4 chân cao su
+const MAM = truM(.166, .022, BAC_SANG, -.045, .166, -.005, PLX, 96);                    // mâm bạc
+const vachMam = new THREE.Mesh(new THREE.TorusGeometry(.166, .0025, 6, 96), DEN_NHUA); vachMam.rotation.x = Math.PI / 2; vachMam.position.set(-.045, .16, -.005); PLX.add(vachMam);
+const DIA_G = new THREE.Group(); DIA_G.position.set(-.045, .177, -.005); PLX.add(DIA_G);
+truM(.148, .003, DEN_NI, 0, .0015, 0, DIA_G, 64);                                   // nỉ lót
+const DIA = new THREE.Mesh(new THREE.CylinderGeometry(.15, .15, .002, 96), [new THREE.MeshStandardMaterial({ color: 0x0b0b0c, roughness: .3, metalness: 0 }), new THREE.MeshStandardMaterial({ map: anhDia(null), roughness: .25, metalness: 0, envMapIntensity: .8 }), new THREE.MeshStandardMaterial({ color: 0x0b0b0c })]);
+DIA.position.y = .0042; DIA_G.add(DIA); dsPBR.push(...DIA.material);
+truM(.0035, .02, BAC_SANG, 0, .012, 0, DIA_G, 12);                                  // trục giữa
+// cần kim chữ S (xoay quanh trục phía sau bên phải)
+truM(.032, .03, BAC, .165, .17, -.12, PLX, 32);
+const CAN = new THREE.Group(); CAN.position.set(.165, .2, -.12); PLX.add(CAN);
+const duongCan = new THREE.CatmullRomCurve3([new THREE.Vector3(0, 0, -.05), new THREE.Vector3(0, 0, .02), new THREE.Vector3(-.02, 0, .09), new THREE.Vector3(.008, 0, .17), new THREE.Vector3(-.025, 0, .225)]);
+CAN.add(new THREE.Mesh(new THREE.TubeGeometry(duongCan, 48, .0045, 10, false), BAC_SANG));
+truM(.017, .035, BAC, 0, 0, -.065, CAN, 24).rotation.x = Math.PI / 2;               // đối trọng
+const dauKim = hopM(.02, .012, .036, DEN_NHUA, -.028, -.004, .24, CAN); dauKim.rotation.y = .3;
+hopM(.004, .004, .02, BAC_SANG, -.04, .002, .25, CAN);                               // tay nhấc
+// nút start/stop, 33/45, thanh pitch, đèn rọi kim
+hopM(.055, .008, .032, DEN_NHUA, -.185, .158, .145, PLX); hopM(.022, .006, .014, BAC_SANG, -.125, .157, .15, PLX); hopM(.022, .006, .014, BAC_SANG, -.098, .157, .15, PLX);
+hopM(.012, .004, .13, DEN_NHUA, .19, .156, .06, PLX); const PITCH = hopM(.032, .012, .018, BAC_SANG, .19, .162, .06, PLX);
+truM(.006, .045, BAC, -.205, .178, -.155, PLX, 12); const denRoi = new THREE.Mesh(new THREE.SphereGeometry(.006, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff })); denRoi.position.set(-.205, .2, -.155); PLX.add(denRoi);
+// --- Đầu băng cối (reel-to-reel) đứng trên quầy ---
+const BANG = new THREE.Group(); BANG.position.copy(B(-2.42, 2.27, .96)); BANG.rotation.y = .12; scene.add(BANG);
+hopM(.43, .38, .2, DEN_NHUA, 0, .19, 0, BANG);
+hopM(.42, .37, .01, BAC, 0, .19, .104, BANG);                                         // mặt bạc
+hopM(.42, .012, .2, BAC_SANG, 0, .006, 0, BANG);
+function anhCuon() {
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+  x.fillStyle = '#c9ccd2'; x.beginPath(); x.arc(128, 128, 127, 0, 6.29); x.fill();
+  x.fillStyle = '#3b2a1c'; x.beginPath(); x.arc(128, 128, 92, 0, 6.29); x.fill();                    // cuộn băng nâu
+  x.globalCompositeOperation = 'destination-out'; for (let k = 0; k < 3; k++) { const a = k * 2.094; x.beginPath(); x.ellipse(128 + Math.cos(a) * 70, 128 + Math.sin(a) * 70, 30, 22, a, 0, 6.29); x.fill(); }
+  x.globalCompositeOperation = 'source-over'; x.fillStyle = '#9aa0a8'; x.beginPath(); x.arc(128, 128, 26, 0, 6.29); x.fill(); x.fillStyle = '#222'; x.beginPath(); x.arc(128, 128, 8, 0, 6.29); x.fill();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const vlCuon = new THREE.MeshStandardMaterial({ map: anhCuon(), roughness: .35, metalness: .6, transparent: true, alphaTest: .5, side: THREE.DoubleSide }); dsPBR.push(vlCuon);
+const CUON = [-.1, .1].map(x => { const o = new THREE.Mesh(new THREE.CircleGeometry(.095, 64), vlCuon); o.position.set(x, .265, .118); BANG.add(o); return o; });
+const vlBang = vlKL(0x3b2a1c, .6, 0); for (const s_ of [-1, 1]) { const o = hopM(.11, .004, .002, vlBang, s_ * .05, .175, .117, BANG); o.rotation.z = s_ * -.55; }
+hopM(.13, .04, .03, BAC_SANG, 0, .15, .118, BANG);                                    // cụm đầu từ
+const vlVU = new THREE.MeshBasicMaterial({ color: 0xffb259 }); dsVL.push(vlVU);
+for (const x of [-.07, .07]) { hopM(.075, .042, .004, vlVU, x, .075, .11, BANG); const kim = hopM(.002, .03, .002, DEN_NHUA, x, .07, .113, BANG); kim.userData.vu = true; }
+const KIM_VU = BANG.children.filter(o => o.userData.vu);
+// anh 09/11: bật nhạc thì 2 loa trên bàn toả sóng âm trong suốt nhẹ (vòng tròn nở ra từ màng loa, mờ dần), bật theo nhịp bass
+const SONG = [[.979, 2.039, .209], [2.651, 2.039, -.209]].map(([x, y, g]) => {
+  const goc = new THREE.Group(); goc.position.copy(B(x, y, 1.043)); goc.rotation.y = g; scene.add(goc);
+  const vong = Array.from({ length: 7 }, () => { const m = new THREE.Mesh(new THREE.RingGeometry(.088, .094, 72),
+    new THREE.MeshBasicMaterial({ color: 0xffe2c4, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+    m.visible = false; m.userData.tuoi = 9; goc.add(m); return m; });
+  return { vong, k: 0 };
+});
+let bassTruoc = 0, tSong = 0;
+function veSong(t, dt, bat) {
+  let bass = 0; if (bat && phanTich) { for (let i = 1; i < 5; i++) bass += duLieu[i]; bass /= 4 * 255; }
+  const nhip = bat && ((bass > .55 && bass > bassTruoc + .04 && t - tSong > .22) || t - tSong > .9); bassTruoc = bass * .9 + bassTruoc * .1;
+  if (nhip) tSong = t;
+  for (const s_ of SONG) {
+    if (nhip) { const m = s_.vong[s_.k++ % s_.vong.length]; m.userData.tuoi = 0; m.userData.manh = .5 + Math.min(.5, bass); m.visible = true; }
+    for (const m of s_.vong) { const a = m.userData.tuoi += dt; if (a > 1.6) { m.visible = false; continue; }
+      const e = a / 1.6; m.scale.setScalar(.9 + e * 1.5); m.position.z = .01 + e * .18; m.material.opacity = .1 * m.userData.manh * Math.pow(1 - e, 1.6); }
+  }
+}
+// tấm lót nỉ đen dưới đầu đĩa: phủ đúng chỗ bóng 2 mâm cũ còn in trong ảnh bake trên mặt đá
+{ const lot = hopM(1.13, .004, .41, vlKL(0x161617, .95, 0), 0, 0, 0, scene); lot.position.copy(B(-1.45, 2.167, .962)); }
+// bàn phím mới (thay bàn phím cũ lọt dưới màn): bàn phím cơ 75 % màu kem, đặt trên tấm lót, trước mặt kính PVM
+const PHIM = new THREE.Group(); PHIM.position.copy(B(1.63, 1.74, .773)); PHIM.rotation.y = THREE.MathUtils.degToRad(4); scene.add(PHIM);
+const KEM = vlKL(0xd9d3c4, .55, 0), PHIM_XAM = vlKL(0xb9b2a3, .6, 0), PHIM_CAM = vlKL(0xd8562e, .5, 0);
+hopM(.34, .022, .115, KEM, 0, .011, 0, PHIM);
+for (let r = 0; r < 5; r++) for (let c = 0; c < 15; c++) {
+  if (r === 4 && c > 3 && c < 10 && c !== 4) continue;
+  const w = r === 4 && c === 4 ? .113 : .0175, x = -.153 + c * .0219 + (r === 4 && c === 4 ? .066 : 0);
+  hopM(w, .009, .0175, (r === 0 && c === 0) || (r === 2 && c === 14) ? PHIM_CAM : r === 0 || c === 14 ? PHIM_XAM : KEM, x, .026, -.044 + r * .022, PHIM);
+}
+for (const x of [-.175, -.14, .14, .175]) truM(.012, .014, BAC_SANG, x, .06, .115, BANG, 20).rotation.x = Math.PI / 2;
+
+// ý 3: màn cầu trắng = trình phát nhạc sống, sóng nhạc chạy theo tiếng (không bật tiếng thì chạy theo nhịp giả lập)
+const cvPhu = document.createElement('canvas'); cvPhu.width = 1024; cvPhu.height = 768; const gPhu = cvPhu.getContext('2d');
+const tPhu = new THREE.CanvasTexture(cvPhu); tPhu.colorSpace = THREE.SRGBColorSpace; tPhu.flipY = false;
+if (MAN_PHU_MESH) { MAN_PHU_MESH.material.map = tPhu; MAN_PHU_MESH.material.needsUpdate = true; }
+const DS_NHAC = {"_nen": {"bai": "I Like You (A Happier Song) [feat. Doja Cat]", "ca_si": "Post Malone", "file": "nen-ca-bai.mp4"}, "2014_Forest_Hills_Drive": {"bai": "No Role Modelz", "ca_si": "J. Cole", "file": "2014_Forest_Hills_Drive.mp4"}, "23__mixtape_": {"bai": "Broken Hearts (feat. Central Cee & Jorja Smith)", "ca_si": "Skepta", "file": "23__mixtape.mp4"}, "24K_Magic__album_": {"bai": "24K Magic", "ca_si": "Bruno Mars", "file": "24K_Magic__album.mp4"}, "After_Hours": {"bai": "Blinding Lights (Remix)", "ca_si": "The Weeknd & ROSALÍA", "file": "After_Hours.mp4"}, "An_Evening_with_Silk_Sonic": {"bai": "Leave The Door Open", "ca_si": "Silk Sonic, Bruno Mars & Anderson .Paak", "file": "An_Evening_with_Silk_Sonic.mp4"}, "Beauty_Behind_the_Madness": {"bai": "The Hills (Live)", "ca_si": "The Weeknd", "file": "Beauty_Behind_the_Madness.mp4"}, "Damn__album_": {"bai": "HUMBLE.", "ca_si": "Kendrick Lamar", "file": "Damn__album.mp4"}, "Dawn_FM": {"bai": "Sacrifice", "ca_si": "The Weeknd", "file": "Dawn_FM.mp4"}, "Discovery__Daft_Punk_album_": {"bai": "One More Time", "ca_si": "Daft Punk", "file": "Discovery__Daft_Punk_album.mp4"}, "Doo_Wops___Hooligans": {"bai": "Just the Way You Are", "ca_si": "Bruno Mars", "file": "Doo_Wops___Hooligans.mp4"}, "Flower_Boy": {"bai": "Like Him (feat. Lola Young)", "ca_si": "Tyler, The Creator", "file": "Flower_Boy.mp4"}, "Freudian__album_": {"bai": "Get You (feat. Kali Uchis)", "ca_si": "Daniel Caesar", "file": "Freudian__album.mp4"}, "Gemini_Rights": {"bai": "Bad Habit", "ca_si": "Steve Lacy", "file": "Gemini_Rights.mp4"}, "Good_Kid__M_A_A_D_City": {"bai": "Money Trees (feat. Jay Rock)", "ca_si": "Kendrick Lamar", "file": "Good_Kid__M_A_A_D_City.mp4"}, "Igor__album_": {"bai": "IGOR'S THEME", "ca_si": "Tyler, The Creator", "file": "Igor__album.mp4"}, "Malibu__album_": {"bai": "Come Down", "ca_si": "Anderson .Paak", "file": "Malibu__album.mp4"}, "Random_Access_Memories": {"bai": "Get Lucky", "ca_si": "Daft Punk, Pharrell Williams & Nile Rodgers", "file": "Random_Access_Memories.mp4"}, "Rodeo__Travis_Scott_album_": {"bai": "Antidote", "ca_si": "Travis Scott", "file": "Rodeo__Travis_Scott_album.mp4"}, "SOS__SZA_album_": {"bai": "Kill Bill", "ca_si": "SZA", "file": "SOS__SZA_album.mp4"}, "Starboy__album_": {"bai": "Starboy (feat. Daft Punk)", "ca_si": "The Weeknd", "file": "Starboy__album.mp4"}, "Swimming__Mac_Miller_album_": {"bai": "Come Back to Earth", "ca_si": "Mac Miller", "file": "Swimming__Mac_Miller_album.mp4"}, "Unorthodox_Jukebox": {"bai": "Locked Out of Heaven", "ca_si": "Bruno Mars", "file": "Unorthodox_Jukebox.mp4"}, "Utopia__Travis_Scott_album_": {"bai": "FE!N (feat. Playboi Carti)", "ca_si": "Travis Scott", "file": "Utopia__Travis_Scott_album.mp4"}, "Wild_West__mixtape_": {"bai": "Top Freestyle", "ca_si": "Central Cee", "file": "Wild_West__mixtape.mp4"}, "_Awaken__My_Love__": {"bai": "Me and Your Mama", "ca_si": "Childish Gambino", "file": "Awaken__My_Love.mp4"}, "Blonde__Frank_Ocean_album_": {"bai": "Pink + White", "ca_si": "Frank Ocean", "file": "Blonde__Frank_Ocean_album.mp4"}, "Astroworld__album_": {"bai": "SICKO MODE", "ca_si": "Travis Scott", "file": "Astroworld__album.mp4"}, "Kiss_Land": {"bai": "Wanderlust", "ca_si": "The Weeknd", "file": "Kiss_Land.mp4"}, "Take_Care": {"bai": "Take Care (feat. Rihanna)", "ca_si": "Drake", "file": "Take_Care.mp4"}, "Ctrl__SZA_album_": {"bai": "Love Galore (feat. Travis Scott)", "ca_si": "SZA", "file": "Ctrl__SZA_album.mp4"}, "Channel_Orange": {"bai": "Thinkin Bout You", "ca_si": "Frank Ocean", "file": "Channel_Orange.mp4"}};
+let baiHienTai = '_nen', audio = null;
+const khoaBia = b => b.ten.replace(/\.(webp|jpg|png).*$/, '');
+const BIA_NEN = new Image(); BIA_NEN.src = 'assets/nhac/nen-bia.jpg'; BIA_NEN.onload = () => { if (baiHienTai === '_nen') { DIA.material[1].map = anhDia(BIA_NEN); DIA.material[1].needsUpdate = true; } };
+const anhBiaCua = k => { if (k === '_nen') return BIA_NEN.complete && BIA_NEN.naturalWidth ? BIA_NEN : null; const b = BIA.find(x => khoaBia(x) === k); return b && b.m.map && b.m.map.image; };
+let phanTich = null, duLieu = new Uint8Array(64);
+// tối ưu 13/11: màn phụ vẽ 30 lần/giây khi cột sóng đang chạy (trước: mọi khung); khi đứng yên chỉ vẽ lại lúc nội dung đổi
+let khungPhu = 0, khoaPhu = null;
+function veManPhu(t, dangChay) {
+  if (dangChay || (phanTich && amBat)) { khoaPhu = null; if (khungPhu++ & 1) return; }
+  else { const k = baiHienTai + '|' + amBat + '|' + Math.ceil((audio && audio.duration ? audio.currentTime / audio.duration : t * .05 % 1) * 64) + '|' + (anhBiaCua(baiHienTai) ? 1 : 0); if (k === khoaPhu) return; khoaPhu = k; }
+  gPhu.fillStyle = '#0a0b0e'; gPhu.fillRect(0, 0, 1024, 768);
+  const d = DS_NHAC[baiHienTai] || DS_NHAC._nen, bia = anhBiaCua(baiHienTai);
+  gPhu.fillStyle = '#6f93c0'; gPhu.font = '26px "IBM Plex Mono"'; gPhu.fillText(amBat ? 'NOW PLAYING' : 'ON THE DECK', 60, 70);
+  if (bia) gPhu.drawImage(bia, 60, 100, 360, 360); else { gPhu.fillStyle = '#d8402c'; gPhu.fillRect(60, 100, 360, 360); gPhu.fillStyle = '#fff'; gPhu.font = '700 34px "IBM Plex Mono"'; gPhu.fillText('I LIKE YOU', 110, 290); }
+  gPhu.fillStyle = '#eef2f7'; gPhu.font = '600 40px "IBM Plex Mono"'; const bai = d.bai.length > 22 ? d.bai.slice(0, 21) + '…' : d.bai; gPhu.fillText(bai, 460, 180);
+  gPhu.fillStyle = '#9aa3b2'; gPhu.font = '28px "IBM Plex Mono"'; gPhu.fillText(d.ca_si.length > 28 ? d.ca_si.slice(0, 27) + '…' : d.ca_si, 460, 230);
+  if (phanTich && amBat) phanTich.getByteFrequencyData(duLieu);
+  for (let i = 0; i < 64; i++) {
+    const gia = phanTich && amBat ? duLieu[i] / 255 : (dangChay ? (.25 + .55 * Math.abs(Math.sin(t * (2.1 + i * .17) + i))) * (1 - i / 90) : .04);
+    const h = 8 + gia * 150; gPhu.fillStyle = i < ((audio && audio.duration ? audio.currentTime / audio.duration : t * .05 % 1) * 64) ? '#e6503c' : '#4a4f5c'; gPhu.fillRect(460 + i * 8.4, 380 - h / 2, 5, h);
+  }
+  gPhu.fillStyle = '#6f93c0'; gPhu.font = '24px "IBM Plex Mono"'; gPhu.fillText(amBat ? 'click a record to change it' : 'click here to play', 460, 540);
+  gPhu.drawImage(SOC_PHU, 0, 0);
+  tPhu.needsUpdate = true;
+}
+
+// ý 4: rê chuột vào bìa đĩa → bìa nhấc ra khỏi kệ, hiện tên album
+const TEN_ALBUM = { '2014_Forest_Hills_Drive': 'J. Cole · 2014 Forest Hills Drive', '23__mixtape_': 'Central Cee · 23', '24K_Magic__album_': 'Bruno Mars · 24K Magic', 'After_Hours': 'The Weeknd · After Hours',
+  'An_Evening_with_Silk_Sonic': 'Silk Sonic · An Evening with Silk Sonic', 'Beauty_Behind_the_Madness': 'The Weeknd · Beauty Behind the Madness', 'Damn__album_': 'Kendrick Lamar · DAMN.',
+  'Dawn_FM': 'The Weeknd · Dawn FM', 'Discovery__Daft_Punk_album_': 'Daft Punk · Discovery', 'Doo_Wops___Hooligans': 'Bruno Mars · Doo-Wops & Hooligans', 'Flower_Boy': 'Tyler, the Creator · Flower Boy',
+  'Freudian__album_': 'Daniel Caesar · Freudian', 'Gemini_Rights': 'Steve Lacy · Gemini Rights', 'Good_Kid__M_A_A_D_City': 'Kendrick Lamar · good kid, m.A.A.d city', 'Igor__album_': 'Tyler, the Creator · IGOR',
+  'Malibu__album_': 'Anderson .Paak · Malibu', 'Random_Access_Memories': 'Daft Punk · Random Access Memories', 'Rodeo__Travis_Scott_album_': 'Travis Scott · Rodeo', 'SOS__SZA_album_': 'SZA · SOS',
+  'Starboy__album_': 'The Weeknd · Starboy', 'Swimming__Mac_Miller_album_': 'Mac Miller · Swimming', 'Unorthodox_Jukebox': 'Bruno Mars · Unorthodox Jukebox', 'Utopia__Travis_Scott_album_': 'Travis Scott · Utopia',
+  'Wild_West__mixtape_': 'Central Cee · Wild West', '_Awaken__My_Love__': 'Childish Gambino · "Awaken, My Love!"', 'Blonde__Frank_Ocean_album_': 'Frank Ocean · Blonde', 'Astroworld__album_': 'Travis Scott · Astroworld',
+  'Psychodrama__album_': 'Dave · Psychodrama', 'Kiss_Land': 'The Weeknd · Kiss Land', 'Take_Care': 'Drake · Take Care', 'Ctrl__SZA_album_': 'SZA · Ctrl', 'Channel_Orange': 'Frank Ocean · channel ORANGE' };
+const tenAlbum = f => { const k = f.replace(/\.(webp|jpg|png).*$/, ''); return TEN_ALBUM[k] || k.replace(/_+/g, ' ').trim(); };
+const tia = new THREE.Raycaster(), chuotNDC = new THREE.Vector2(-9, -9), NHAN = document.getElementById('nhan'); let biaDangChon = null;
+// tối ưu 13/11: trước đây mỗi khung dò tia vào cả phòng (242 nghìn tam giác) → máy tính tụt còn ~25 khung/giây mỗi khi chuột nằm trong phòng.
+//   Nay dò bìa đĩa trước (vài chục tấm phẳng); chỉ khi trúng bìa mới dò phòng xem có vật che phía trước, và kết quả đó được nhớ 250 ms cho cùng tấm bìa.
+const BIA_O = BIA.map(b => b.o); let nhoChe = { o: null, t: 0, kc: Infinity };
+function biaTai(ndc) {   // tấm bìa (không bị che) dưới điểm ndc, hoặc null
+  cam.updateMatrixWorld(); tia.setFromCamera(ndc, cam); const tr = tia.intersectObjects(BIA_O, false); if (!tr.length) return null;
+  const o0 = tr[0].object, n0 = performance.now();
+  if (nhoChe.o !== o0 || n0 - nhoChe.t > 250) { const chan = tia.intersectObjects(CHAN, false); nhoChe = { o: o0, t: n0, kc: chan.length ? chan[0].distance : Infinity }; }
+  return tr[0].distance < nhoChe.kc + .03 ? BIA.find(b => b.o === o0) : null;
+}
+window.__biaTai = (x, y) => { const b = biaTai(new THREE.Vector2(x, y)); return b ? khoaBia(b) : null; };   // để kiểm: tên bìa đĩa tại điểm (x, y) theo toạ độ −1…1
+addEventListener('pointermove', e => { chuotNDC.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1); NHAN.style.left = e.clientX + 14 + 'px'; NHAN.style.top = e.clientY + 14 + 'px'; }, { passive: true });
+// anh 09/11: kéo thả chuột để nhìn quanh phòng (xoay đầu trái/phải, lên/xuống); thả ra thì từ từ quay về. Bấm (không kéo) vào bìa đĩa thì phát bài.
+let keo = null, daKeo = false, yawK = 0, pitchK = 0, tThaKeo = 0;
+addEventListener('pointerdown', e => { if (e.pointerType === 'touch' || e.button !== 0 || e.target.closest('button')) return; keo = { x: e.clientX, y: e.clientY }; daKeo = false; document.body.style.cursor = 'grabbing'; });
+addEventListener('pointermove', e => {
+  if (!keo) return; if (Math.hypot(e.clientX - keo.x, e.clientY - keo.y) > 8) daKeo = true;
+  if (daKeo) { yawK = Math.max(-1.25, Math.min(1.25, yawK - e.movementX * .0026)); pitchK = Math.max(-.45, Math.min(.45, pitchK - e.movementY * .002)); }
+}, { passive: true });
+addEventListener('pointerup', e => {
+  if (!keo) return; const laBam = !daKeo; keo = null; daKeo = false; tThaKeo = performance.now() / 1000; document.body.style.cursor = '';
+  if (laBam && biaDangChon) { datAm(true); chonBai(khoaBia(biaDangChon)); }
+  else if (laBam && MAN_PHU_MESH) { tia.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), cam);
+    if (tia.intersectObject(MAN_PHU_MESH, false).length) { datAm(true); chonBai('_nen'); } }
+});
+// sửa lỗi 13/11 (điện thoại): chạm vào bìa đĩa / màn phụ trước đây không làm gì (chỉ chuột mới bấm được) → nay chạm nhanh, không kéo = phát bài như bấm chuột
+let cham0 = null;
+addEventListener('pointerdown', e => { cham0 = e.pointerType === 'touch' && !e.target.closest('button') ? { x: e.clientX, y: e.clientY, t: performance.now() } : null; });
+addEventListener('pointercancel', () => { cham0 = null; });
+addEventListener('pointerup', e => {
+  if (e.pointerType !== 'touch' || !cham0) return; const c = cham0; cham0 = null;
+  if (Math.hypot(e.clientX - c.x, e.clientY - c.y) > 10 || performance.now() - c.t > 500) return;
+  if (!window.__phongSan || window.__trongNao || trongBT || p < .16 || p > .86 || document.body.classList.contains('oweb')) return;   // chỉ khi phòng đang hiện và đã bật đèn
+  const ndc = new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), b = biaTai(ndc);
+  if (b && DS_NHAC[khoaBia(b)]) { datAm(true); chonBai(khoaBia(b)); batNhac(true); NHAN.textContent = tenAlbum(b.ten); NHAN.style.left = Math.min(innerWidth - 220, Math.max(8, e.clientX - 60)) + 'px'; NHAN.style.top = Math.max(8, e.clientY - 44) + 'px'; NHAN.style.opacity = 1; tNhanCham = performance.now(); }
+  else if (MAN_PHU_MESH) { tia.setFromCamera(ndc, cam); if (tia.intersectObject(MAN_PHU_MESH, false).length) { datAm(true); chonBai('_nen'); batNhac(true); } }
+});
+let tNhanCham = -1e9;
+// ý 6: bấm đúp vào màn CRT → tắt kiểu TV cũ rồi bật lại
+addEventListener('dblclick', e => {
+  tia.setFromCamera(new THREE.Vector2(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), cam);
+  if (MAN_PVM_MESH && tia.intersectObject(MAN_PVM_MESH, false).length) { tatTV = performance.now(); tieng('tat'); setTimeout(() => tieng('crt'), 1500); }
+});
+
+
+// ---------- đường máy quay: chép đúng dat_may() trong Blender (Blender x,y,z → three x,z,-y) ----------
+function B(x, y, z) { return new THREE.Vector3(x, z, -y); }   // khai báo dạng function để dùng được từ sớm
+const P0 = B(0.9, -2.35, 1.5), PA = B(1.25, -1.7, 1.3), PE = B(1.618, 1.52, 1.06), T0 = B(-0.2, 2.4, 1.35), MAN_TAM = B(1.627, 1.897, 1.058);
+const sm = x => x * x * (3 - 2 * x), vt = new THREE.Vector3(), nh = new THREE.Vector3(), peDoc = new THREE.Vector3();
+function datMay(t, lenDich = null) {
+  let lens;
+  if (t < .3) { const e = sm(t / .3); vt.lerpVectors(P0, PA, e); nh.lerpVectors(T0, MAN_TAM, e); lens = 20 + 2 * e; }
+  else { const e = sm((t - .3) / .7); nh.copy(MAN_TAM); lens = 22 + 10 * e;
+    // phương án B (khung hình dọc): màn hẹp thì điểm dừng cuối lùi ra xa màn CRT, vừa đủ thấy trọn bề ngang màn (tên TRUNG HIEU / BLUEZII không bị cắt). Màn ngang ≥ 1,39 giữ nguyên.
+    const kcGoc = PE.distanceTo(MAN_TAM), kc = Math.min(1.4, Math.max(kcGoc, .522 / cam.aspect));
+    peDoc.copy(PE).sub(MAN_TAM).multiplyScalar(kc / kcGoc).add(MAN_TAM); vt.lerpVectors(PA, peDoc, e); }
+  const hfov = 2 * Math.atan(18 / lens), asp = Math.max(cam.aspect, 16 / 9 * .75);
+  cam.fov = THREE.MathUtils.radToDeg(2 * Math.atan(Math.tan(hfov / 2) / asp)); cam.updateProjectionMatrix();
+  cam.position.copy(vt); cam.lookAt(nh);
+}
+
+// ---------- khung dây mở màn: ảnh chụp từ đúng góc máy quay đầu (nét đậm trên nền đen) ----------
+const anhDay = await new Promise(r => { const i = new Image(); i.onload = () => r(i); i.src = 'assets/khung-day.webp'; });
+
+// ---------- rê chuột, bụi, âm thanh ----------
+const ch = { x: 0, y: 0 }, chM = { x: 0, y: 0 };
+addEventListener('pointermove', e => { if (e.pointerType !== 'touch') { ch.x = e.clientX / innerWidth - .5; ch.y = e.clientY / innerHeight - .5; } }, { passive: true });
+// bụi thật (anh 09/11: bản cũ "fake"): chỉ thấy trong vùng có đèn (quầng đèn sau bàn), hạt rất nhỏ, chỉ loé khi bắt ánh,
+// trôi chậm ngẫu nhiên và lắng dần; vài hạt sát ống kính nhoè thành đốm mờ. Ngoài vùng sáng thì không thấy.
+const BUI = Array.from({ length: innerWidth < 700 ? 28 : 46 }, () => moiHat({}));
+const DOM = Array.from({ length: 4 }, () => ({ x: Math.random(), y: Math.random(), r: 6 + Math.random() * 8, s: Math.random() * 6.28 }));
+function moiHat(b) { const a = Math.random() * 6.28, r = Math.sqrt(Math.random()); b.x = .62 + Math.cos(a) * r * .26; b.y = .42 + Math.sin(a) * r * .2;
+  b.vx = (Math.random() - .5) * .004; b.vy = .002 + Math.random() * .004; b.s = Math.random() * 6.28; b.z = Math.random(); b.tuoi = 0; return b; }
+function veBuiThat(cx, t, a, dt) {
+  if (a <= 0) return; cx.globalCompositeOperation = 'lighter';
+  for (const b of BUI) {
+    b.tuoi += dt; b.vx += (Math.random() - .5) * .0006 * dt * 60; b.vx *= .995; b.x += b.vx * dt; b.y += b.vy * dt;
+    const kx = (b.x - .62) / .26, ky = (b.y - .42) / .2, vung = Math.max(0, 1 - (kx * kx + ky * ky));   // trong quầng sáng mới thấy
+    if (vung <= 0 && b.tuoi > 1) { moiHat(b); continue; }
+    const loe = Math.pow(Math.max(0, Math.sin(t * (1.3 + b.z) + b.s)), 6);                          // chỉ loé khi hạt xoay bắt ánh
+    const al = (.08 + .55 * loe) * vung * Math.min(1, b.tuoi) * a; if (al < .01) continue;
+    const x = b.x * W - chM.x * 22 * (.4 + b.z), y = b.y * H - chM.y * 16 * (.4 + b.z);
+    cx.fillStyle = `rgba(255,222,190,${al})`; cx.fillRect(x, y, .7 + b.z * .6, .7 + b.z * .6);
+  }
+  for (const d of DOM) {                                    // hạt sát ống kính: đốm nhoè rất mờ
+    const x = (d.x + Math.sin(t * .05 + d.s) * .03) * W - chM.x * 60, y = (d.y + Math.cos(t * .04 + d.s) * .03) * H - chM.y * 45;
+    const gr = cx.createRadialGradient(x, y, 0, x, y, d.r); gr.addColorStop(0, `rgba(255,210,170,${.035 * a})`); gr.addColorStop(1, 'rgba(255,210,170,0)');
+    cx.fillStyle = gr; cx.fillRect(x - d.r, y - d.r, d.r * 2, d.r * 2);
+  }
+  cx.globalCompositeOperation = 'source-over';
+}
+let ac = null, amBat = false, ganTong = null; const daPhat = new Set(), NUT = document.getElementById('am');
+function khoiAm() {
+  if (ac) return; ac = new AudioContext(); ganTong = ac.createGain(); ganTong.gain.value = 0; ganTong.connect(ac.destination);
+  // anh 09/11: bỏ tiếng ù nền (nhiễu + 50 Hz), chỉ còn nhạc và tiếng tách/gõ
+}
+function tieng(loai) {
+  if (!amBat || !ac) return; const t = ac.currentTime;
+  if (loai === 'crt') {
+    const n = ac.createBufferSource(), b = ac.createBuffer(1, ac.sampleRate * .25, ac.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 8); n.buffer = b;
+    const g1 = ac.createGain(); g1.gain.value = .6; n.connect(g1).connect(ganTong); n.start(t);
+    const o = ac.createOscillator(); o.frequency.value = 7800; const g2 = ac.createGain(); g2.gain.setValueAtTime(.025, t); g2.gain.exponentialRampToValueAtTime(.004, t + 3);
+    o.connect(g2).connect(ganTong); o.start(t); o.stop(t + 3.2);
+  } else if (loai === 'tat') {
+    const o = ac.createOscillator(); o.frequency.setValueAtTime(900, t); o.frequency.exponentialRampToValueAtTime(60, t + .3); const g1 = ac.createGain();
+    g1.gain.setValueAtTime(.2, t); g1.gain.exponentialRampToValueAtTime(.0001, t + .35); o.connect(g1).connect(ganTong); o.start(t); o.stop(t + .4);
+  } else if (loai === 'go') {
+    const n = ac.createBufferSource(), b = ac.createBuffer(1, ac.sampleRate * .03, ac.sampleRate), dd = b.getChannelData(0);
+    for (let i = 0; i < dd.length; i++) dd[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / dd.length, 4); n.buffer = b;
+    const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1800; const g1 = ac.createGain(); g1.gain.value = .12 + Math.random() * .06;
+    n.connect(hp).connect(g1).connect(ganTong); n.start(t);
+  } else if (loai === 'den') {
+    const o = ac.createOscillator(); o.type = 'square'; o.frequency.value = 120; const g1 = ac.createGain();
+    g1.gain.setValueAtTime(.12, t); g1.gain.exponentialRampToValueAtTime(.0001, t + .06); o.connect(g1).connect(ganTong); o.start(t); o.stop(t + .07);
+  } else {
+    const n = ac.createBufferSource(), b = ac.createBuffer(1, ac.sampleRate * .8, ac.sampleRate), d = b.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (i / d.length) * .5; n.buffer = b;
+    const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2400; const g1 = ac.createGain(); g1.gain.value = .35;
+    n.connect(bp).connect(g1).connect(ganTong); n.start(t);
+  }
+}
+// nhạc (anh 09/11, cách 1): đoạn nghe thử 30 giây thật. Mặc định "I Like You" (Post Malone); bấm bìa đĩa nào thì phát bài của album đó.
+let tuChon = false;   // 13/11: khách tự chọn bài ở Playlist → bảo tàng không tự đổi sang E85 nữa
+let nhacGain = null, tDoiBai = -9, ilyMix = null, e85 = null, e85Mix = null, nhacBT = null, hTat = 0;   // gop-3: nhacBT = 'e85' | 'ily' khi đang ở bảo tàng, null khi không
+function batNhac(bat) {
+  if (!ac) return;
+  if (!audio) { audio = new Audio(); audio.loop = true; audio.preload = 'auto'; audio.src = 'assets/nhac/' + DS_NHAC[baiHienTai].file;
+    const src = ac.createMediaElementSource(audio); nhacGain = ac.createGain(); nhacGain.gain.value = .9; phanTich = ac.createAnalyser(); phanTich.fftSize = 128;
+    ilyMix = ac.createGain(); ilyMix.gain.value = nhacBT === 'e85' ? 0 : 1;
+    src.connect(nhacGain).connect(ilyMix).connect(phanTich).connect(ganTong); }
+  if (nhacBT === 'e85') { taoE85(); if (bat && e85.paused) e85.play().catch(() => {}); else if (!bat && !e85.paused) e85.pause(); return; }   // gop-3: ở bảo tàng mặc định phát E85
+  if (bat && audio.paused) audio.play().catch(() => {}); else if (!bat && !audio.paused) audio.pause();
+}
+// gop-3: nhạc bảo tàng E85 (lặp). Đổi bài = nhỏ dần / lớn dần ~2 s (hằng số thời gian .6 s → sau 2 s còn ~4 %)
+function taoE85() { if (e85 || !ac) return; e85 = new Audio(); e85.loop = true; e85.preload = 'auto'; e85.src = 'assets/nhac/e85.mp4';
+  e85Mix = ac.createGain(); e85Mix.gain.value = 0; ac.createMediaElementSource(e85).connect(e85Mix).connect(ganTong); }
+function datNhacBT(k) {   // k: 'e85' | 'ily' | null (rời bảo tàng → về I Like You)
+  nhacBT = k; veNutNhac(); if (!ac || !audio) return; taoE85();
+  const t = ac.currentTime, laE = k === 'e85';
+  ilyMix.gain.cancelScheduledValues(t); ilyMix.gain.setTargetAtTime(laE ? 0 : 1, t, .6);
+  e85Mix.gain.cancelScheduledValues(t); e85Mix.gain.setTargetAtTime(laE ? 1 : 0, t, .6);
+  if (amBat) (laE ? e85 : audio).play().catch(() => {});
+  clearTimeout(hTat); hTat = setTimeout(() => { if (nhacBT === 'e85') audio.pause(); else e85.pause(); }, 2600);   // bài đã nhỏ hẳn thì dừng
+}
+window.__nhac = () => ({ nhacBT, amBat, ily: audio ? { paused: audio.paused, t: +audio.currentTime.toFixed(2), mix: ilyMix && +ilyMix.gain.value.toFixed(3), src: audio.src.split('/').pop() } : null,
+  e85: e85 ? { paused: e85.paused, t: +e85.currentTime.toFixed(2), mix: e85Mix && +e85Mix.gain.value.toFixed(3), loop: e85.loop } : null });
+window.__bai = () => ({ bai: baiHienTai, audio: audio && audio.src, paused: audio && audio.paused });
+function chonBai(k) {
+  if (!DS_NHAC[k] || k === baiHienTai) return; baiHienTai = k; tDoiBai = performance.now() / 1000;
+  DIA.material[1].map = anhDia(anhBiaCua(k), k === '_nen' ? 'I LIKE YOU' : ''); DIA.material[1].needsUpdate = true;
+  if (audio) { audio.pause(); audio.src = 'assets/nhac/' + DS_NHAC[k].file; audio.currentTime = 0; }
+  tieng('den');
+  if (nhacBT === 'e85') { tuChon = true; datNhacBT('ily'); }   // 13/11: chọn đĩa ở phòng lúc đang nghe E85 → nghe đĩa vừa chọn
+  window.__baoWeb && window.__baoWeb();
+}
+function datAm(bat) {
+  khoiAm(); ac.resume(); if (amBat === bat) return; amBat = bat; NUT.textContent = 'Sound ' + (amBat ? 'on' : 'off'); NUT.setAttribute('aria-pressed', amBat);
+  ganTong.gain.setTargetAtTime(amBat ? 1 : 0, ac.currentTime, .2);
+  if (amBat && p < .02 && performance.now() - t0 < MO_XONG * 1000) { t0 = performance.now(); daPhat.clear(); }
+  if (!amBat && audio) audio.pause();
+  if (!amBat && e85) e85.pause();
+  if (amBat && nhacBT) batNhac(true);   // gop-3: bật tiếng lúc đang ở bảo tàng → phát đúng bài đang chọn
+}
+NUT.addEventListener('click', () => datAm(!amBat));
+const NUT_NHAC = document.createElement('button'); NUT_NHAC.id = 'nutNhac'; NUT_NHAC.type = 'button'; document.body.appendChild(NUT_NHAC);
+function veNutNhac() { const e = nhacBT !== 'ily';
+  NUT_NHAC.innerHTML = e ? '<b>♪ E85</b> <i>· ↺ I Like You</i>' : '<b>♪ I Like You</b> <i>· ↺ E85</i>';
+  NUT_NHAC.setAttribute('aria-label', e ? 'Now playing E85. Switch to I Like You' : 'Now playing I Like You. Switch to E85'); }
+veNutNhac();
+NUT_NHAC.addEventListener('pointerdown', e => e.stopPropagation());
+NUT_NHAC.addEventListener('click', e => { e.stopPropagation(); const k = nhacBT === 'e85' ? 'ily' : 'e85';
+  if (k === 'ily' && baiHienTai !== '_nen') chonBai('_nen');
+  if (!amBat) { nhacBT = k; veNutNhac(); datAm(true); } datNhacBT(k); batNhac(true); });
+window.__amThanh = () => (amBat && ac && ganTong) ? { ac, ra: ganTong, nhac: nhacGain } : null;   // cho âm thanh đoạn kết trong não dùng chung loa + hạ nhạc
+// anh 09/11: bật nhạc từ đầu. Trình duyệt chỉ cho phát tiếng sau lần chạm/bấm đầu tiên, nên lần chạm đầu ở bất kỳ đâu = bật tiếng + phát I Like You từ 0:00
+{ const goi = document.createElement('div'); goi.id = 'goiAm'; goi.textContent = 'tap anywhere for sound ↘';
+  // phương án B: gợi ý là nhãn máy chữ nằm ngay trên nút tiếng (góc phải dưới), chỉ vào nút
+  goi.style.cssText = 'position:fixed;right:max(40px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 86px);z-index:60;font:400 11px/1 "Space Mono",monospace;letter-spacing:.06em;text-transform:uppercase;color:#0b0b0c;background:#f4f3ee;padding:6px 9px 5px;rotate:-2deg;pointer-events:none;transition:opacity .6s;white-space:nowrap';
+  if (innerWidth < 700) Object.assign(goi.style, { right: 'max(12px,env(safe-area-inset-right,0px))', bottom: 'calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 66px)' });
+  document.body.appendChild(goi);
+  const tat = () => { goi.style.opacity = 0; setTimeout(() => goi.remove(), 800); removeEventListener('pointerdown', mo, true); removeEventListener('keydown', mo, true); };
+  const mo = e => { if (NUT.contains(e.target)) { tat(); return; } if (!amBat) { datAm(true); batNhac(true); } tat(); };
+  addEventListener('pointerdown', mo, true); addEventListener('keydown', mo, true); }
+// nút nghe lại I Like You (dùng ở cả phòng lẫn trong não): bật tiếng, chọn bài nền, phát lại từ đầu
+// 13/11 anh: nút nghe lại I Like You ở PHÒNG (cùng chỗ, cùng kiểu với nút trong não)
+{ const n = document.createElement('button'); n.type = 'button'; n.id = 'phongNhac';
+  n.innerHTML = '<span class="vg" aria-hidden="true">↺</span><b>I Like You</b><i>Post Malone</i>'; n.setAttribute('aria-label', 'Play I Like You by Post Malone again');
+  n.addEventListener('pointerdown', e => e.stopPropagation()); n.addEventListener('click', e => { e.stopPropagation(); window.__phatLaiILikeYou && window.__phatLaiILikeYou(); });
+  document.body.appendChild(n);
+  const st = document.createElement('style'); st.textContent = `#phongNhac{position:fixed;z-index:15;right:calc(max(40px,env(safe-area-inset-right,0px)) + 126px);bottom:calc(env(safe-area-inset-bottom,0px) + 30px);height:44px;display:inline-flex;align-items:center;gap:6px;padding:0 14px;font:400 11px/1 'Space Mono',monospace;letter-spacing:.04em;color:#fff4f8;background:rgba(6,14,20,.55);border:1px solid rgba(255,233,240,.25);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .4s;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+#phongNhac:hover,#phongNhac:focus-visible{border-color:#fff4f8;outline:0}
+body.hien:not(.nao):not(.bt):not(.oweb):not(.coLop) #phongNhac{opacity:1;pointer-events:auto}
+@media (max-width:700px){#phongNhac{right:calc(max(12px,env(safe-area-inset-right,0px)) + 132px);bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 12px);font-size:10px;padding:0 10px;max-width:calc(100vw - 140px);overflow:hidden;white-space:nowrap}}
+/* 13/11 anh: nút nghe lại gọn, tinh hơn (phòng + não dùng chung) */
+html body #phongNhac,html body #naoNhac{height:44px!important;padding:0 14px 0 7px!important;gap:10px!important;display:inline-flex!important;align-items:center!important;background:rgba(11,11,12,.42)!important;border:1px solid rgba(244,243,238,.16)!important;border-radius:0!important;color:#f4f3ee!important;font:400 10px/1 'Space Mono',monospace!important;letter-spacing:.06em!important;-webkit-backdrop-filter:blur(8px)!important;backdrop-filter:blur(8px)!important;max-width:none!important}
+html body #phongNhac .vg,html body #naoNhac .vg{width:28px;height:28px;display:grid;place-items:center;border:1px solid rgba(244,243,238,.35);border-radius:50%;font:400 14px/1 'Archivo',sans-serif;transition:transform .5s cubic-bezier(.2,.7,.2,1),background .2s,color .2s}
+html body #phongNhac b,html body #naoNhac b{font:800 12px/1 'Archivo',sans-serif;font-stretch:90%;text-transform:uppercase;letter-spacing:.02em}
+html body #phongNhac i,html body #naoNhac i{font-style:normal;opacity:.5;text-transform:uppercase}
+html body #phongNhac:hover,html body #naoNhac:hover,html body #phongNhac:focus-visible,html body #naoNhac:focus-visible{border-color:rgba(244,243,238,.5)!important;outline:0!important}
+html body #phongNhac:hover .vg,html body #naoNhac:hover .vg{transform:rotate(-360deg);background:#f4f3ee;color:#0b0b0c}
+@media (max-width:700px){html body #phongNhac i,html body #naoNhac i{display:none}html body #phongNhac,html body #naoNhac{padding:0 12px 0 7px!important}}`;
+  document.head.appendChild(st); }
+
+// ===== 13/11 anh: 1 nút Playlist chung cho cả 4 cảnh (phòng, đầu, bảo tàng, web), nhạc chạy liền một mạch =====
+// Bài 3–10: chờ anh gửi (id null = ô trống, chưa bấm được). Nhạc chỉ tải khi phát bài đó, không làm trang mở chậm hơn.
+const PLAYLIST = [{id:'_nen', ten:'I Like You', ca:'Post Malone'}, {id:'e85', ten:'E85', ca:'Don Toliver'},
+  {id:'pl03', ten:'Truth in the Lies', ca:'Central Cee ft. Lil Durk'}, {id:'pl04', ten:'Bartender', ca:'T-Pain ft. Akon'},
+  {id:'pl05', ten:'Die With A Smile', ca:'Lady Gaga & Bruno Mars'}, {id:'pl06', ten:'Phòng Số 12', ca:'Nguyễn, Băng Qua ft. Trần Lả Lướt'},
+  {id:'pl07', ten:'Money Trees', ca:'Kendrick Lamar'}, {id:'pl08', ten:'Miss Independent', ca:'Ne-Yo'},
+  {id:'pl09', ten:'In Love', ca:'Low G ft. JustaTee'}, {id:'pl10', ten:'The Color Violet', ca:'Tory Lanez'}];   // 13/11 anh gửi bài 3–10 (bài đầy đủ, nén 96k)
+PLAYLIST.slice(2).forEach((b, i) => { DS_NHAC[b.id] = {bai: b.ten, ca_si: b.ca, file: 'pl-' + String(i + 3).padStart(2, '0') + '.mp4'}; });
+function baiDang(){ return nhacBT === 'e85' ? 'e85' : (PLAYLIST.some(b => b.id === baiHienTai) ? baiHienTai : 'album'); }
+window.__tuaCuoi = () => { const a = nhacBT === 'e85' ? e85 : audio; if (a) a.dispatchEvent(new Event('ended')); };   // để thử tự chuyển bài
+function tenDang(){ const b = PLAYLIST.find(x => x.id === baiDang()); return b ? b.ten : (DS_NHAC[baiHienTai] ? DS_NHAC[baiHienTai].bai : ''); }
+function phatBai(id){
+  if (!id) return; tuChon = true; datAm(true);
+  if (id === 'e85') { nhacBT = 'e85'; batNhac(true); datNhacBT('e85'); }
+  else { if (baiHienTai !== id) chonBai(id); nhacBT = 'ily'; batNhac(true); datNhacBT('ily'); if (audio && audio.paused) audio.play().catch(() => {}); }
+  cheDoPL(); vePL(); window.__baoWeb && window.__baoWeb();
+}
+// hết bài thì tự sang bài kế (chỉ khi khách đã chọn từ Playlist; trước đó nhạc nền vẫn lặp như cũ)
+let tron = false;   // 13/11 anh: Shuffle play
+function baiTiep(){ const ds = PLAYLIST.filter(b => b.id), i = ds.findIndex(b => b.id === baiDang());
+  if (tron) { const khac = ds.filter((b, j) => j !== i); phatBai(khac[(Math.random() * khac.length) | 0].id); return; }
+  phatBai(ds[(i + 1) % ds.length].id); }
+function batTron(){ tron = !tron; if (tron) baiTiep(); else { vePL(); window.__baoWeb && window.__baoWeb(); } }
+window.__batTron = batTron;
+let daGanHet = false;
+function cheDoPL(){ if (audio) audio.loop = false; if (e85) e85.loop = false; if (!daGanHet && audio && e85) { daGanHet = true; audio.addEventListener('ended', baiTiep); e85.addEventListener('ended', baiTiep); } }
+window.__phatBai = phatBai;
+window.__playlist = () => ({ds: PLAYLIST, bai: baiDang(), ten: tenDang(), am: amBat, tron});
+const PL = document.createElement('div'); PL.id = 'plW';
+PL.innerHTML = `<div id="plDs" role="dialog" aria-label="Playlist"><div class="plDau"><p class="pt">Playlist · ${PLAYLIST.length} tracks</p><button type="button" id="plTron" aria-pressed="false"><span aria-hidden="true">⤨</span> Shuffle</button></div><div id="plHang"></div></div>`
+  + `<button type="button" id="plNut" aria-expanded="false" aria-controls="plDs"><span class="eq"><i></i><i></i><i></i></span><b>Playlist</b><em id="plTen"></em><span class="mui" aria-hidden="true">▾</span></button>`;
+document.body.appendChild(PL);
+const plNut = document.getElementById('plNut'), plHang = document.getElementById('plHang');
+function vePL(){
+  const dang = baiDang(); document.getElementById('plTron').setAttribute('aria-pressed', tron);
+  plHang.innerHTML = PLAYLIST.map((b, i) => `<button type="button" data-id="${b.id || ''}" ${b.id ? '' : 'disabled'} class="${b.id && b.id === dang ? 'on' : ''}"><span class="so">${String(i + 1).padStart(2, '0')}</span><span class="tb">${b.ten}</span><span class="ca">${b.ca}</span></button>`).join('');
+  document.getElementById('plTen').textContent = tenDang();
+  PL.classList.toggle('chay', amBat);
+}
+document.getElementById('plTron').addEventListener('click', () => batTron());
+plHang.addEventListener('click', e => { const b = e.target.closest('button[data-id]'); if (b && b.dataset.id) phatBai(b.dataset.id); });
+const moPL = on => { PL.classList.toggle('mo', on); plNut.setAttribute('aria-expanded', on); };
+plNut.addEventListener('click', e => { e.stopPropagation(); vePL(); moPL(!PL.classList.contains('mo')); });
+PL.addEventListener('pointerdown', e => e.stopPropagation());
+addEventListener('pointerdown', () => PL.classList.contains('mo') && moPL(false));
+addEventListener('keydown', e => { if (e.key === 'Escape') moPL(false); });
+setInterval(() => { if (!PL.classList.contains('mo')) { document.getElementById('plTen').textContent = tenDang(); PL.classList.toggle('chay', amBat); } }, 700);
+vePL();
+{ const st = document.createElement('style'); st.textContent = `
+#phongNhac,#naoNhac,#nutNhac{display:none!important}
+#plW{position:fixed;z-index:74;right:calc(max(40px,env(safe-area-inset-right,0px)) + 126px);bottom:calc(env(safe-area-inset-bottom,0px) + 30px);opacity:0;pointer-events:none;transition:opacity .4s}
+body.hien:not(.oweb):not(.coLop) #plW{opacity:1;pointer-events:auto}
+#plNut{height:44px;display:inline-flex;align-items:center;gap:10px;padding:0 14px;background:rgba(11,11,12,.42);border:1px solid rgba(244,243,238,.16);color:#f4f3ee;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);max-width:min(340px,calc(100vw - 180px))}
+#plNut:hover,#plNut:focus-visible,#plW.mo #plNut{border-color:rgba(244,243,238,.5);outline:0}
+#plNut b{font:800 12px/1 'Archivo',sans-serif;font-stretch:90%;text-transform:uppercase;letter-spacing:.02em}
+#plNut em{font:400 10px/1 'Space Mono',monospace;font-style:normal;letter-spacing:.06em;text-transform:uppercase;opacity:.55;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#plNut .mui{font-size:10px;transition:transform .2s}#plW.mo #plNut .mui{transform:rotate(180deg)}
+#plW .eq{display:inline-flex;align-items:flex-end;gap:2px;height:12px}#plW .eq i{display:block;width:3px;height:30%;background:currentColor}
+#plW.chay .eq i{animation:plEq .9s ease-in-out infinite}#plW.chay .eq i:nth-child(2){animation-delay:.2s}#plW.chay .eq i:nth-child(3){animation-delay:.45s}
+@keyframes plEq{0%,100%{height:30%}50%{height:100%}}
+#plDs{position:absolute;right:0;bottom:calc(100% + 8px);width:300px;max-height:calc(100vh - 170px);overflow:auto;background:#0b0b0c;color:#f4f3ee;border:1px solid rgba(244,243,238,.16);padding:12px;display:none}
+#plW.mo #plDs{display:block}
+#plDs .pt{font:400 10px/1.4 'Space Mono',monospace;letter-spacing:.06em;text-transform:uppercase;opacity:.6;margin:0}#plDs .plDau{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px}#plTron{height:32px;padding:0 10px;background:none;border:1px solid rgba(244,243,238,.3);color:inherit;cursor:pointer;font:400 10px/1 'Space Mono',monospace;letter-spacing:.06em;text-transform:uppercase}#plTron span{font-size:13px;margin-right:2px}#plTron:hover{border-color:#f4f3ee}#plTron[aria-pressed=true]{background:#f4f3ee;color:#0b0b0c;border-color:#f4f3ee}#plDs .pc{margin:8px 0 0}
+#plHang button{width:100%;display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:8px;min-height:40px;padding:0 10px;margin-bottom:4px;background:none;border:1px solid rgba(244,243,238,.14);color:inherit;cursor:pointer;text-align:left}
+#plHang .so,#plHang .ca{font:400 10px/1 'Space Mono',monospace;letter-spacing:.04em;opacity:.55}
+#plHang .tb{font:800 13px/1.1 'Archivo',sans-serif;font-stretch:90%;text-transform:uppercase}
+#plHang button:hover:not(:disabled){border-color:#f4f3ee}
+#plHang button.on{background:#f4f3ee;color:#0b0b0c}#plHang button.on .so,#plHang button.on .ca{opacity:.7}
+#plHang button:disabled{opacity:.35;cursor:not-allowed}
+@media (max-width:700px){#plW{right:calc(max(12px,env(safe-area-inset-right,0px)) + 132px);bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 12px)}
+  #plNut{padding:0 12px;max-width:calc(100vw - 160px)}#plNut em{display:none}
+  #plDs{position:fixed;right:12px;left:12px;width:auto;bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 64px);max-height:calc(100vh - 200px)}
+  #plHang button{min-height:44px}}`; document.head.appendChild(st); }
+window.__phatLaiILikeYou = () => { datAm(true); chonBai('_nen'); batNhac(true); if (audio) { audio.currentTime = 0; audio.play().catch(() => {}); } };
+
+// ---------- cuộn ảo ----------
+let pDich = 0, p = 0, t0 = performance.now(); const MO_XONG = 3.0;
+let qDich = 0, q = 0; window.__trongNao = false; window.__qNao = 0;
+// anh 11/11 (sửa cuộn): não đi THEO CUỘN liền, cùng tỉ lệ với phòng (3200 px lăn = hết scene). Bản nấc cũ (1 lần vuốt = 1/10 scene) bị chậm.
+const PX_SCENE = 3200;
+let naoTai = false;   // tối ưu 13/11: não chỉ tải khi khách bắt đầu cuộn (xem taiNao)
+let daBuoc = false, tLanCuoi = 0, cuMoi = true, qDau = 0, boQua = false;   // qDau: q lúc bắt đầu lần lăn; boQua: vừa đổi cảnh → bỏ phần quán tính còn lại của lần lăn đó
+// cuộn hết phòng (p = 1) thì phần cuộn dư đi vào não (q 0 → 1); cuộn ngược thì lùi não trước rồi mới lùi phòng
+let rDich = 0, r = 0, BT = null, btTai = false, trongBT = false, btHD = false, naoMat = false; window.__rBT = 0;
+// tối ưu bảo tàng 10/11: chuyển cảnh não ↔ cổng chạy theo THỜI GIAN (~0,9 s), 1 nấc lăn / 1 lần vuốt là đủ:
+//   r 0 → R_DOI: màn tối phủ dần lên não; qua R_DOI đổi cảnh dưới màn tối; R_DOI → 1: màn tối mở ra cổng (máy quay lùi nhẹ về đúng tư thế cổng).
+//   Bỏ tàn lửa / bụi / vệt trăng 2D. Lùi ở cổng: chạy ngược y hệt về não.
+const T_CHUYEN = .9, R_DOI = .42; let tR = performance.now(), tLan = 0;
+const day = d => { if ((performance.now() - t0) / 1000 <= MO_XONG) return; tLan = performance.now(); if (window.__phongSan) taiNao();
+  if (btHD) return;                                                                       // đang ở bảo tàng: cuộn do bảo tàng lo
+  if (cuMoi) { cuMoi = false; qDau = qDich; boQua = false; }
+  if (boQua) return;
+  if (d > 0 && qDich >= 1) { if (daBuoc || qDau < 1) return; daBuoc = true; if (BT) rDich = 1; else choBT(); return; }   // sang bảo tàng: chỉ bằng lần lăn MỚI khi đã ở cuối não (quán tính không đẩy qua)
+  if (d < 0 && rDich > 0) { if (daBuoc) return; daBuoc = true; rDich = 0; return; }
+  if (r > .002) return;                                                                   // đang chuyển cảnh: không cuộn não bên dưới
+  if (d > 0 && pDich >= 1) { qDich = Math.min(1, qDich + d / PX_SCENE); return; }
+  if (d < 0 && qDich > 0) { qDich = Math.max(0, qDich + d / PX_SCENE); return; }
+  pDich = Math.min(1, Math.max(0, pDich + d / PX_SCENE)); };
+window.__qDichCong = v => { qDich = Math.min(1, Math.max(0, qDich + v)); };
+// gop-3: tải ngầm bảo tàng khi đã đi được nửa não
+function taiBT() { if (btTai) return; btTai = true; window.__tBatDauTaiBT = performance.now();
+  import('./bao-tang/trang.mjs').then(m => m.moBaoTang({ khiLui: luiBT, khiXong: () => {} })).then(api => { BT = api; window.__BT = api; window.__tXongTaiBT = performance.now(); })
+    .catch(e => { console.error(e); window.__btLoi = String(e); baoLoiBT('import: ' + (e && e.stack || e)); }); }
+// tạm để soi lỗi trên link artifact: lỗi của bảo tàng hiện thành dòng chữ nhỏ góc trái dưới
+function baoLoiBT(s) { let o = document.getElementById('loiBT'); if (!o) { o = document.createElement('pre'); o.id = 'loiBT';
+  o.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99;max-width:70vw;max-height:40vh;overflow:auto;margin:0;padding:6px 8px;background:rgba(0,0,0,.8);color:#ff8a80;font:11px/1.35 monospace;white-space:pre-wrap;pointer-events:none';
+  document.body.appendChild(o); } o.textContent += String(s).slice(0, 600) + '\n'; }
+addEventListener('error', e => { if (btTai) baoLoiBT('error: ' + e.message + ' @ ' + (e.filename || '') + ':' + (e.lineno || '')); });
+addEventListener('unhandledrejection', e => { if (btTai) baoLoiBT('reject: ' + (e.reason && (e.reason.stack || e.reason.message) || e.reason)); });
+setInterval(() => { if (btTai && !BT && performance.now() - window.__tBatDauTaiBT > 15000 && !window.__daBaoCham) { window.__daBaoCham = 1; baoLoiBT('museum not ready after 15 s'); } }, 2000);
+function choBT() { taiBT(); const h = document.getElementById('naoHint'); if (h && !BT) h.textContent = window.__btLoi ? 'could not open the museum' : 'opening the museum…'; }
+function luiBT() { if (!btHD) return; btHD = false; BT.kichHoat(false); rDich = 0; tLan = performance.now(); cuMoi = false; boQua = true; window.focus(); }   // lùi ở cổng → chạy ngược chuyển cảnh về não
+window.__datR = v => { rDich = r = v; };
+addEventListener('wheel', e => { const n = e.timeStamp || performance.now(); if (n - tLanCuoi > 220) { daBuoc = false; cuMoi = true; } tLanCuoi = n; day(e.deltaY * (e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 800 : 1)); }, { passive: true });   // lăn liên tục (quán tính trackpad) = 1 lần
+let yC = null;
+// anh 10/11: điện thoại khoá trục sau 10 px — vuốt dọc = cuộn, vuốt ngang = xoay nhìn (não đọc window.__khoaTruc), không lẫn nhau
+let xC0 = 0, yC0 = 0, xC = 0; window.__khoaTruc = null;
+// sửa 13/11 (điện thoại, lỗi 1): ở phòng, cú vuốt bắt đầu theo chiều ngang = xoay nhìn quanh (ngang + lên xuống, cùng giới hạn như kéo chuột); bắt đầu theo chiều dọc = cuộn đi tiếp như cũ
+const phongDangHien = () => window.__phongSan && !window.__trongNao && !trongBT && !document.body.classList.contains('oweb');
+addEventListener('touchstart', e => { daBuoc = false; cuMoi = true; yC = yC0 = e.touches[0].clientY; xC = xC0 = e.touches[0].clientX; window.__khoaTruc = null; }, { passive: true });
+addEventListener('touchmove', e => { if (yC === null) return; const t = e.touches[0], y = t.clientY;
+  if (!window.__khoaTruc) { const dx = Math.abs(t.clientX - xC0), dy = Math.abs(y - yC0); if (dx > 10 || dy > 10) window.__khoaTruc = dy >= dx ? 'doc' : 'ngang'; }
+  if (window.__khoaTruc === 'doc') day((yC - y) * 2.4);
+  else if (window.__khoaTruc === 'ngang' && e.touches.length === 1 && phongDangHien()) { yawK = Math.max(-1.25, Math.min(1.25, yawK - (t.clientX - xC) * .0045)); pitchK = Math.max(-.45, Math.min(.45, pitchK - (y - yC) * .003)); }
+  yC = y; xC = t.clientX; }, { passive: true });
+addEventListener('touchend', () => { yC = null; }, { passive: true });
+addEventListener('keydown', e => { daBuoc = false; cuMoi = true; if (e.key === 'ArrowDown' || e.key === ' ') day(240); if (e.key === 'ArrowUp') day(-240); });
+const NAC = document.getElementById('nac'), THE = document.getElementById('the');
+window.__datP = v => { pDich = p = v; };
+const DO = new URLSearchParams(location.search).has('do'), oDo = document.getElementById('do'); if (DO) oDo.style.display = 'block';
+let dem = 0, moc = performance.now(); window.__do = { fps: [] };
+
+await document.fonts.load('500 112px "IBM Plex Mono"').catch(() => {});
+document.getElementById('tai').classList.add('xong'); t0 = performance.now();
+// tối ưu 13/11: bộ não (13 MB máy tính / 8 MB điện thoại) trước đây tải ngầm 1,2 s sau khi phòng hiện, kể cả khi khách chưa làm gì.
+//   Nay chỉ tải khi khách bắt đầu cuộn / vuốt / bấm phím lần đầu (hàm day) → khách chỉ ghé xem rồi đi không tốn 13 MB; khách cuộn thì não tải trong lúc đi qua phòng.
+window.__phongSan = true;
+function taiNao() { if (naoTai) return; naoTai = true; import('./nao.mjs').catch(e => { console.error(e); window.__naoLoi = String(e); }); }
+const qLac = new THREE.Quaternion(), eLac = new THREE.Euler();
+// ===== gop-3: SCENE 3 BẢO TÀNG =====
+// Một lúc chỉ vẽ 1 cảnh WebGL nặng: vào bảo tàng → não ngừng vẽ, ~0,8 s sau não "mất context có chủ đích" (giải phóng bộ nhớ GPU, giữ dữ liệu JS);
+// lùi về não → khôi phục context (three.js tự nạp lại lên GPU), bảo tàng ngừng vẽ. Phòng (scene 1) giữ như bản gộp cũ (đứng yên, không vẽ).
+const VAO = document.createElement('canvas'); VAO.id = 'btVao'; document.body.appendChild(VAO); const vg = VAO.getContext('2d');
+let hMat = 0;
+// màn tối chuyển cảnh: r 0 → R_DOI tối dần (trên não), R_DOI → 1 sáng dần (trên cổng)
+function veMan() { const a = r < R_DOI ? ss(0, R_DOI, r) : 1 - ss(R_DOI + .04, .97, r);
+  if (a <= .002) { if (VAO.style.display !== 'none') VAO.style.display = 'none'; return; }
+  if (VAO.width !== 2) { VAO.width = 2; VAO.height = 2; }   // 1 màu phủ: canvas 2×2 phóng to, gần như không tốn gì
+  VAO.style.display = 'block'; vg.clearRect(0, 0, 2, 2); vg.fillStyle = `rgba(2,5,7,${a.toFixed(3)})`; vg.fillRect(0, 0, 2, 2); }
+function doiBT(vao) {
+  trongBT = vao; document.body.classList.toggle('bt', vao); document.body.classList.toggle('btvao', vao);
+  const g = document.getElementById('bt3');
+  if (vao) {
+    window.__trongNao = false; document.body.classList.remove('nao');
+    g && g.classList.add('hien'); BT.vao(0); BT.chay();
+    clearTimeout(hMat); hMat = setTimeout(() => { if (trongBT && window.__naoGPU && !naoMat) { window.__naoGPU.mat(); naoMat = true; } }, 800);
+    if (!window.__webTruoc) { window.__webTruoc = 1; setTimeout(() => { const l = document.createElement('link'); l.rel = 'prefetch'; l.href = 'web/index.html'; document.head.appendChild(l); }, 5000); }   // tối ưu 13/11: tải trước trang web trắng lúc rảnh
+    if (!tuChon) datNhacBT('e85');
+  } else {
+    clearTimeout(hMat); btHD = false; BT.kichHoat(false); BT.dung(); g && g.classList.remove('hien'); VAO.style.display = 'none';
+    if (naoMat && window.__naoGPU) { window.__naoGPU.hoi(); naoMat = false; }
+    if (!tuChon) datNhacBT(null);
+    const h = document.getElementById('naoHint'); if (h) h.textContent = 'NEXT · PROJECTS ↓';
+  }
+}
+function veBT() {
+  BT.vao(Math.min(1, Math.max(0, (r - R_DOI) / (1 - R_DOI))));
+  if (r >= .999 && !btHD && performance.now() - tLan > 300) { btHD = true; BT.kichHoat(true); }   // chờ hết quán tính lăn rồi mới giao cuộn cho bảo tàng
+  if (amBat && nhacBT) batNhac(true);
+  veMan();
+}
+// tối ưu 13/11: sang web trắng thì trả hết bộ nhớ GPU của phòng + não + bảo tàng và ngừng âm thanh (nút Back to the room tải lại trang nên không cần giữ)
+window.__giaiPhong = () => {
+  try { if (BT && BT.huy) BT.huy(); } catch (e) {}
+  try { if (window.__naoGPU && !naoMat) { window.__naoGPU.mat(); naoMat = true; } } catch (e) {}
+  try { renderer.forceContextLoss(); phu.width = phu.height = 1; } catch (e) {}
+  try { if (ac && ac.state === 'running') ac.suspend(); } catch (e) {}
+};
+function ve() {
+  if (document.body.classList.contains('oweb')) return;   // gop-4: đã sang web trắng → dừng vẽ phòng/não cho nhẹ
+  const t = IT_DONG ? 99 : (performance.now() - t0) / 1000;
+  p += (pDich - p) * .08; chM.x += (ch.x - chM.x) * .05; chM.y += (ch.y - chM.y) * .05;
+  q += (qDich - q) * .08; window.__qNao = q;
+  { const now = performance.now(), dtR = Math.min(.05, (now - tR) / 1000); tR = now;
+    if (r !== rDich) { const st = IT_DONG ? 1 : dtR / T_CHUYEN; r = rDich > r ? Math.min(rDich, r + st) : Math.max(rDich, r - st); } }
+  window.__rBT = r; window.__rDichBT = rDich; window.__pPhong = p;   // phương án B: thanh hành trình đọc p
+  if (pDich > 0 && !naoTai) taiNao();
+  if (q > .5 && !btTai) taiBT();
+  const vaoBT = r > R_DOI && !!BT;
+  if (vaoBT !== trongBT) doiBT(vaoBT);
+  if (vaoBT) { veBT(); requestAnimationFrame(ve); return; }
+  if (r > .002 || VAO.style.display !== 'none') veMan();   // màn tối phủ lên não (nửa đầu chuyển cảnh)
+  const vaoNao = q > .002 && !!window.__naoSan;
+  if (vaoNao !== window.__trongNao) { window.__trongNao = vaoNao; document.body.classList.toggle('nao', vaoNao); if (vaoNao) window.__tVaoNao = performance.now(); }
+  if (vaoNao) { if (amBat) batNhac(true); THE.style.opacity = 0; requestAnimationFrame(ve); return; }   // trong não: ngừng vẽ phòng, nhạc vẫn chạy
+  // ---- 00 (tự chạy): đen → màn CRT bật giữa bóng tối → gõ chữ, hiện tên → nét khung dây toả ra từ màn như bản vẽ ----
+  // ---- cuộn 0–24 %: phòng hiện dần theo sóng tròn từ màn, đèn bật từng đợt; 24–86 %: máy quay tiến vào; 86–98 %: chui vào chữ ----
+  const tMan = t - .6, ve2 = ss(2.4, 6.2, t);
+  const hien = ss(.02, .24, p);                                           // tiến độ phòng hiện
+  uHien.uC.value.copy(MAN_TAM); uHien.uR.value = .05 + hien * 8.5; uHien.uMep.value = 1 - ss(.18, .24, p);
+  // đèn bật theo cuộn: chập chờn 2 lần rồi sáng hẳn (có tiếng tách)
+  const den = p < .1 ? 0 : p < .115 ? .5 : p < .125 ? .08 : p < .15 ? .7 : p < .16 ? .25 : Math.min(1, .7 + ss(.16, .2, p) * .3);
+  for (const [mocP, ten] of [[.1, 'den'], [.125, 'den'], [.16, 'den']]) { if (p > mocP && !daPhat.has('p' + mocP)) { daPhat.add('p' + mocP); tieng(ten); } if (p < mocP - .01) daPhat.delete('p' + mocP); }
+  if (t > .6 && !daPhat.has('crt')) { daPhat.add('crt'); tieng('crt'); }
+  const d = Math.min(1, Math.max(0, (p - .86) / .12));
+  datMay(Math.min(1, Math.max(0, (p - .24) / .62)));
+  const qGoc = cam.quaternion.clone();                                   // hướng nhìn gốc: lúc lao vào màn giữ nguyên hướng này (đâm thẳng, không xoay)
+  if (p < .24 && !IT_DONG) { const th = Math.sin(t * .4) * .012; cam.position.x += th; cam.position.y += Math.sin(t * .27) * .006; }   // máy quay "thở" nhẹ khi đứng chờ
+  if (d > 0) {
+    const dich = B(1.627 - .21, 1.897 - .01, 1.058 + .025);          // gần chữ "TR" trên kính
+    cam.position.lerp(dich, Math.pow(d, 1.6) * .985); cam.near = .002; cam.updateProjectionMatrix();
+    if (p > .87 && !daPhat.has('chui')) { daPhat.add('chui'); tieng('chui'); }
+  } else { cam.near = .01; cam.updateProjectionMatrix(); if (p < .8) daPhat.delete('chui'); }
+  // anh 09/11: rê chuột thì cảnh lắc lư/xoay nhẹ rõ hơn → máy quay trượt vòng quanh điểm đang nhìn (thị sai), nghiêng nhẹ; không rê thì vẫn đung đưa chậm
+  const lac = (1 - d) * (IT_DONG ? 0 : 1), trX = chM.x + Math.sin(t * .23) * .12, trY = chM.y + Math.sin(t * .17 + 1) * .08;
+  cam.updateMatrix(); const phai = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 0), len = new THREE.Vector3().setFromMatrixColumn(cam.matrix, 1);
+  const kc = cam.position.distanceTo(nh), bien = Math.min(.45, kc * .09);
+  cam.position.addScaledVector(phai, -trX * bien * lac).addScaledVector(len, trY * bien * .55 * lac); cam.lookAt(nh);
+  if (d > 0) cam.quaternion.slerp(qGoc, Math.min(1, d * 8));
+  eLac.set(0, 0, trX * .035 * lac); qLac.setFromEuler(eLac); cam.quaternion.multiply(qLac);
+  if (!keo && Math.abs(pDich - p) > .0015) { yawK *= .93; pitchK *= .93; }      // giữ góc đã kéo; cuộn tiếp thì từ từ quay về
+  if (Math.abs(yawK) + Math.abs(pitchK) > .0005) { const qY = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yawK * (1 - d)); cam.quaternion.premultiply(qY); cam.rotateX(pitchK * (1 - d)); }
+  if (window.__SOI) { cam.position.copy(B(...__SOI[0])); cam.lookAt(B(...__SOI[1])); cam.fov = __SOI[2] || 50; cam.updateProjectionMatrix(); }   // chỉ để soi lỗi
+  const k = IT_DONG ? 1 : .1 + .9 * den;                                 // chưa bật đèn: chỉ ánh màn hắt (rất tối)
+  for (const m of dsVL) m.color.setScalar(m.userData.goc ?? (m.userData.goc = m.color.r)).multiplyScalar(k);
+  // đầu đĩa PLX-1000: đèn bật hẳn → mâm quay 33 vòng/phút, cần kim xoay vào; đổi bài → kim nhấc ra rồi hạ lại. Đầu băng cối quay cuộn khi có nhạc.
+  const dtv = Math.min(.05, t - (window.__tDia ?? t)); window.__tDia = t; const chay = den >= .99;
+  const doiBai = performance.now() / 1000 - tDoiBai < 1.4, kimVao = chay && !doiBai;
+  window.__vt = (window.__vt ?? 0) + ((chay ? 3.46 : 0) - (window.__vt ?? 0)) * .02; DIA_G.rotation.y -= window.__vt * dtv;
+  CAN.rotation.y += ((kimVao ? -.5 : 0) - CAN.rotation.y) * .05; CAN.position.y = .2 - (kimVao && Math.abs(CAN.rotation.y + .5) < .02 ? .006 : 0);
+  const dangPhat = chay && kimVao && Math.abs(CAN.rotation.y + .5) < .03;
+  for (const [i, c] of CUON.entries()) c.rotation.z -= (dangPhat ? (i ? 1.6 : 1.1) : 0) * dtv;
+  if (phanTich && amBat) phanTich.getByteFrequencyData(duLieu);
+  KIM_VU.forEach((o, i) => { o.rotation.z = -.6 + (dangPhat ? (amBat && phanTich ? duLieu[3 + i * 6] / 255 : .4 + .3 * Math.sin(t * 9 + i)) : 0) * 1.2; });
+  for (const m of dsPBR) m.envMapIntensity = .6 * k; denQuay.intensity = 1.2 * k; denQuay2.intensity = .5 * k; denRoi.material.color.setScalar(.15 + .85 * den);
+  if (amBat) batNhac(true);   // anh 09/11: cả bài, phát liền từ lúc bật tiếng, không ngắt theo kim đĩa
+  // anh 09/11: bỏ sóng âm. veSong(t, dtv, amBat && dangPhat && audio && !audio.paused && p < .86);
+  // ý 2: cuộn tới đâu, bìa đĩa trên kệ được "đèn dò" rọi sáng tới đó (đi từ trái sang phải theo cuộn)
+  const doX = -3.2 + ss(.16, .5, p) * 4.4;
+  for (const b of BIA) {
+    const tg = Math.exp(-Math.pow((b.goc.x - doX) / .45, 2)) * (p > .16 && p < .62 ? 1 : 0) + (khoaBia(b) === baiHienTai ? .35 : 0), hv = b === biaDangChon ? 1 : 0;
+    b.m.color.multiplyScalar(1 + .9 * tg + .5 * hv);
+    b.nhac += (hv - b.nhac) * .15;                                        // ý 4: nhấc bìa ra khỏi kệ
+    b.o.position.copy(b.goc).add(new THREE.Vector3(0, .05 * b.nhac, .12 * b.nhac)); b.o.quaternion.copy(b.q0); b.o.rotateX(-.25 * b.nhac);
+  }
+  if (!IT_DONG && den > .5 && d === 0) {
+    let moi = biaTai(chuotNDC);
+    if (moi) window.__tTrung = t; else if (biaDangChon && t - (window.__tTrung ?? 0) < .35) moi = biaDangChon;   // giữ bìa đang nhấc thêm chút cho khỏi chập chờn khi bìa nhô ra
+    if (moi !== biaDangChon) { biaDangChon = moi; if (moi) { NHAN.textContent = tenAlbum(moi.ten) + (DS_NHAC[khoaBia(moi)] ? ' · click to play' : ''); tieng('go'); } }
+    NHAN.style.opacity = (biaDangChon && !daKeo) || performance.now() - tNhanCham < 1600 ? 1 : 0; if (!keo) document.body.style.cursor = biaDangChon ? 'pointer' : 'grab';
+  } else { biaDangChon = null; NHAN.style.opacity = 0; }
+  veManPhu(t, chay);
+  if (IT_DONG) uHien.uR.value = 99;
+  bloom.strength = .25 + .3 * den;
+  const mem = 1 - ss(.45, .84, p), locMoi = d > .5 ? THREE.NearestFilter : THREE.LinearFilter;
+  if (veManHinh(IT_DONG ? 9 : tMan, mem) || tMan2.magFilter !== locMoi) { tMan2.magFilter = locMoi; tMan2.needsUpdate = true; }
+  mMan.color.setScalar(1); uLuoi.value = ss(.45, .9, d);
+  composer.render();
+  // lớp phủ 2D: nét khung dây toả ra từ màn CRT (vòng tròn lớn dần), mờ đi khi phòng thật hiện ra; rồi bụi
+  pg.clearRect(0, 0, W, H);
+  const aDay = ve2 * (1 - ss(.03, .2, p));
+  if (aDay > .01 && anhDay) {
+    const c = MAN_TAM.clone().project(cam), cx = (c.x + 1) / 2 * W, cy = (1 - c.y) / 2 * H, R_ = Math.hypot(W, H) * ve2;
+    const kk = Math.max(W / anhDay.width, H / anhDay.height), w = anhDay.width * kk, h = anhDay.height * kk;
+    pg.save(); pg.beginPath(); pg.arc(cx, cy, R_, 0, 6.29); pg.clip(); pg.globalAlpha = aDay * .55; pg.globalCompositeOperation = 'lighter';
+    pg.filter = 'invert(1) sepia(1) hue-rotate(170deg) saturate(2.2) brightness(.9)'; pg.drawImage(anhDay, (W - w) / 2, (H - h) / 2, w, h); pg.restore(); pg.filter = 'none';
+    if (ve2 < 1) { pg.globalCompositeOperation = 'lighter'; pg.strokeStyle = `rgba(150,195,255,${.45 * (1 - ve2)})`; pg.lineWidth = 1.5; pg.beginPath(); pg.arc(cx, cy, R_, 0, 6.29); pg.stroke(); }
+    pg.globalCompositeOperation = 'source-over'; pg.globalAlpha = 1;
+  }
+  if (!IT_DONG) { veBuiThat(pg, t, den * (1 - ss(.6, .86, p) * .6), Math.min(.05, t - (window.__tTruoc ?? t))); } window.__tTruoc = t;
+  document.body.classList.toggle('hien', t > 4.2);
+  // anh 09/11: bị hút vào màn hình. Chồng nhiều lớp ảnh phóng to + xoay quanh tâm màn CRT (mờ phóng), rìa tối khép lại như đường hầm
+  { const hut = ss(.84, .985, p);
+    if (hut > .01) { const c = MAN_TAM.clone().project(cam), cx = (c.x + 1) / 2 * W, cy = (1 - c.y) / 2 * H;
+      pg.save(); pg.globalCompositeOperation = 'lighter';
+      for (let i = 1; i <= 7; i += MOB ? 2 : 1) { pg.save(); pg.globalAlpha = hut * .2 * (1 - i / 8) * (MOB ? 1.75 : 1);   // phương án B: điện thoại 4 lớp thay vì 7 (đậm bù)
+        pg.translate(cx, cy); pg.rotate(hut * hut * .07 * i); pg.scale(1 + hut * .085 * i, 1 + hut * .085 * i); pg.translate(-cx, -cy); pg.drawImage(cv, 0, 0, W, H); pg.restore(); }
+      pg.globalCompositeOperation = 'source-over'; const D = Math.hypot(W, H);
+      const g = pg.createRadialGradient(cx, cy, D * (.55 - .5 * hut), cx, cy, D * (.8 - .45 * hut)); g.addColorStop(0, 'rgba(2,3,8,0)'); g.addColorStop(1, `rgba(2,3,8,${.95 * hut})`);
+      pg.fillStyle = g; pg.fillRect(0, 0, W, H); pg.restore(); } }
+  THE.style.opacity = ss(.97, 1, p);   // loé trắng ở cuối cú lao vào màn
+  if (p > .97) { const tien = Math.round((window.__naoTien || 0) * 100); document.getElementById('naoTai').textContent = window.__naoLoi ? 'could not open the head' : window.__naoSan ? 'scroll ↓' : 'opening the head… ' + tien + '%'; }
+  NAC.textContent = String(Math.round(p * 100)).padStart(2, '0') + ' / 100';
+  dem++; const n = performance.now(); if (n - moc >= 1000) { const f = dem * 1000 / (n - moc); window.__do.fps.push(+f.toFixed(1)); if (DO) oDo.textContent = f.toFixed(0) + ' fps'; dem = 0; moc = n; }
+  requestAnimationFrame(ve);
+}
+requestAnimationFrame(ve);
+window.__veLai = () => requestAnimationFrame(ve);   // 13/11: tua ngược từ web về bảo tàng → chạy lại vòng vẽ
+window.__amBat = () => amBat; window.__datAm = b => datAm(b);   // 13/11: web điều khiển nhạc đang phát từ phòng
+</script>
+<!-- gop-4: scene 4 web trắng. Hút vào hố đen (scene3:xong) → mở web/index.html phủ toàn màn (màn chờ đen của web nối liền màn đen).
+     Web chỉ tải lúc tới đây cho nhẹ. Nút "Back to the room" trong web gửi {bz:'ve-phong'} → tải lại từ scene 1. Mở thẳng web: thêm #web vào link. -->
+<style>#web{position:fixed;inset:0;width:100%;height:100%;border:0;z-index:60;display:none;background:#0b0b0c}#web.on{display:block}body.oweb #goiAm,body.oweb #nutNhac,body.oweb .goc{display:none!important}</style>
+<iframe id="web" title="Bluezii works"></iframe>
+<!-- phương án B: khung chữ chung (thanh hành trình, chữ BLUEZII, thẻ chuyển cảnh, gợi ý cuộn) -->
+<script type="module" src="khung.mjs"></script>
+<style>
+/* 13/11 (anh): hố đen → thẳng portfolio (không màn chờ), tua ngược về bảo tàng, nút Skip + menu ≡ ở 3 scene đầu */
+#web{clip-path:circle(0% at 50% 50%);visibility:hidden}
+#web.on{visibility:visible}
+#web.mo{clip-path:circle(150% at 50% 50%);transition:clip-path 1.1s cubic-bezier(.7,0,.2,1)}
+#web.dong{clip-path:circle(0% at 50% 50%);transition:clip-path .8s cubic-bezier(.7,0,.2,1)}
+#nhay{position:fixed;z-index:72;right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 46px);display:flex;gap:6px;opacity:0;transition:opacity .8s}   /* 13/11 anh: hạ xuống ngang chữ BLUEZII (khDau top +46) */
+@media (max-width:700px){#nhay{top:calc(env(safe-area-inset-top,0px) + 26px)}}
+body.hien #nhay{opacity:1}
+body.oweb #nhay{display:none}
+#nhay button{height:44px;min-width:44px;padding:0 12px;border:0;cursor:pointer;background:#f2f1ea;color:#0b0b0c;font:800 13px/1 'Archivo',sans-serif;font-stretch:90%;text-transform:uppercase;letter-spacing:.01em}
+#nhay button:hover,#nhay button[aria-expanded="true"]{background:#0b0b0c;color:#f2f1ea;outline:1px solid #f2f1ea}
+#nhay .ba{display:grid;place-content:center;gap:4px}#nhay .ba i{display:block;width:18px;height:2px;background:currentColor}
+#dsMenu{position:fixed;z-index:72;right:max(16px,env(safe-area-inset-right,0px));top:calc(env(safe-area-inset-top,0px) + 74px);background:#f2f1ea;color:#0b0b0c;min-width:220px;padding:6px 0;display:none}
+#dsMenu.on{display:block}
+#dsMenu a{display:flex;gap:10px;align-items:baseline;padding:10px 16px;font:900 26px/1 'Archivo',sans-serif;font-stretch:82%;text-transform:uppercase;letter-spacing:-.02em;color:inherit;text-decoration:none}
+#dsMenu a small{font:400 11px/1 'Space Mono',monospace}
+#dsMenu a:hover span{background:#0b0b0c;color:#f2f1ea}
+body.oweb #dsMenu{display:none}
+/* 13/11 (lỗi 1): vuốt trên cảnh 3D do trang tự xử lý (xoay / cuộn) → trình duyệt không chen cử chỉ riêng (vuốt ngang = lùi trang, kéo-để-tải-lại) */
+canvas{touch-action:none}
+body.coLop #nhay,body.coLop #dsMenu{display:none!important}
+body:has(#bThe.mo,#finder.mo) #nhay,body:has(#bThe.mo,#finder.mo) #dsMenu{display:none!important}
+/* 13/11 (lỗi 4): điện thoại — menu thành thanh đen dưới đáy, giống thanh của web trắng; --thanh = chiều cao thanh, các nút bám đáy (khung.mjs) cộng thêm */
+@media (max-width:700px){
+  :root{--thanh:44px}
+  body.coLop{--thanh:0px}
+  #nutMenu{display:none!important}
+  #dsMenu{display:flex;left:0;right:0;top:auto;bottom:0;min-width:0;padding:0 4px env(safe-area-inset-bottom,0px);background:#111214;color:#fff;opacity:0;pointer-events:none;transition:opacity .8s}
+  body.hien #dsMenu{opacity:1;pointer-events:auto}
+  #dsMenu a{flex:1 1 auto;justify-content:center;align-items:center;min-height:44px;padding:15px 4px 14px;font:900 15px/1 'Archivo',sans-serif;font-stretch:82%;letter-spacing:-.02em;white-space:nowrap}
+  #dsMenu a small{display:none}
+  #dsMenu a:hover span{background:none;color:inherit}
+  #dsMenu a:active span{background:#fff;color:#111214}
+}
+/* nút đóng cửa sổ Finder (chấm đỏ 12 px): nới vùng bấm ra 44 px */
+#bt3 #finder .d.do{position:relative}
+#bt3 #finder .d.do::after{content:"";position:absolute;inset:-16px}
+/* chừa góc phải trên cho Portfolio → + ≡: đẩy đồng hồ não và bộ đếm bảo tàng xuống */
+#naoHud #tp,#bTp{margin-top:52px}
+</style>
+<div id="nhay"><button type="button" id="nutSkip">Portfolio →</button><button type="button" class="ba" id="nutMenu" aria-label="Menu" aria-expanded="false"><i></i><i></i><i></i></button></div>
+<nav id="dsMenu" aria-label="Pages"><a href="#" data-k="room"><small>00</small><span>Intro</span></a><a href="#" data-k="works"><small>01</small><span>Work</span></a><a href="#" data-k="skills"><small>02</small><span>Skill</span></a><a href="#" data-k="about"><small>03</small><span>About</span></a><a href="#" data-k="talk"><small>04</small><span>Contact</span></a></nav>
+<script>
+(function(){
+  const f = document.getElementById('web'), MOB = matchMedia('(max-width:760px), (pointer:coarse)').matches;
+  let daTai = false, tuHo = false, daGiai = false, webSan = false, choBao = null;
+  const gui = m => { try { f.contentWindow.postMessage(m, '*'); } catch (e) {} };
+  // tải web trước (ẩn) khi đứng ở hố đen → hút xong hiện ngay, không màn chờ
+  function taiTruoc(){ if (daTai) return; daTai = true; f.src = 'web/index.html?ho=1'; }
+  setInterval(() => { try { const B = window.__BT; if (!daTai && B && B.u && B.u() > (B.info ? 0 : 0) && document.body.classList.contains('bt')) { const ds = document.querySelectorAll('#bt3 #bang article').length; if (ds && B.u() >= ds - 1.6) taiTruoc(); } } catch (e) {} }, 400);
+  function trangThai(){ gui({bz:'trangthai', bt: tuHo, nhac: window.__amBat ? window.__amBat() : false, pl: window.__playlist ? window.__playlist() : null}); }
+  window.__baoWeb = trangThai;
+  function hien(trang){
+    f.classList.add('on'); document.body.classList.add('oweb');
+    requestAnimationFrame(() => { f.classList.remove('dong'); f.classList.add('mo'); });
+    const bao = () => { trangThai(); gui({bz:'hien', trang: trang || null}); try { f.contentWindow.focus(); } catch (e) {} };
+    // sửa 13/11: trước đây bấm Skip / menu lúc web chưa tải thì lệnh "hien" gửi vào khung còn trống (about:blank) và mất → web hiện thiếu tên + giới thiệu, menu không mở đúng trang. Nay đợi web báo "hoi" (đã sẵn sàng) rồi mới gửi.
+    if (webSan) bao(); else choBao = bao;
+  }
+  // vào web: qua hố đen (giữ bảo tàng tạm dừng để tua ngược) hoặc Skip/menu (trả hết bộ nhớ 3D)
+  function moWeb(trang, quaHo){
+    if (f.classList.contains('on')) { if (trang) gui({bz:'hien', trang}); return; }
+    tuHo = !!quaHo; taiTruoc();
+    try { window.__BT && window.__BT.dung && window.__BT.dung(); } catch (e) {}
+    hien(trang);
+    if (!tuHo) setTimeout(() => { try { if (!daGiai) { daGiai = true; window.__giaiPhong && window.__giaiPhong(); } } catch (e) {} }, 1500);
+  }
+  // tua ngược: web khép lại thành chấm giữa màn → bảo tàng chạy ngược cảnh hút
+  function veBT(){
+    if (!tuHo || !window.__BT) { veNha(); return; }
+    f.classList.remove('mo'); f.classList.add('dong');
+    document.body.classList.remove('oweb');
+    try { window.__BT.chay(); } catch (e) {}
+    window.__veLai && window.__veLai();
+    setTimeout(() => { const n = document.getElementById('luiRa'); n && n.click(); }, 80);
+    setTimeout(() => { f.classList.remove('on', 'dong'); }, 820);
+  }
+  function veNha(){ history.replaceState(null, '', location.pathname + location.search); location.reload(); }
+  addEventListener('scene3:xong', () => moWeb(null, true));
+  addEventListener('message', e => { if (e.source !== f.contentWindow || !e.data) return; const d = e.data;
+    if (d.bz === 've-phong') veNha();
+    else if (d.bz === 've-bt') veBT();
+    else if (d.bz === 'tron') { try { window.__batTron && window.__batTron(); } catch (er) {} trangThai(); }
+    else if (d.bz === 'phat') { try { window.__phatBai && window.__phatBai(d.id); } catch (er) {} trangThai(); }
+    else if (d.bz === 'nhac') { try { window.__datAm && window.__datAm(!!d.bat); } catch (er) {} trangThai(); }
+    else if (d.bz === 'hoi') { webSan = true; trangThai(); if (choBao) { const b = choBao; choBao = null; b(); } } });
+  // nút Skip + menu ≡ (chỉ các trang portfolio: Work trở đi)
+  const nm = document.getElementById('nutMenu'), ds = document.getElementById('dsMenu');
+  document.getElementById('nutSkip').onclick = () => moWeb(null, false);
+  nm.onclick = () => { const on = !ds.classList.contains('on'); ds.classList.toggle('on', on); nm.setAttribute('aria-expanded', on); };
+  ds.querySelectorAll('a').forEach(a => a.onclick = ev => { ev.preventDefault(); ds.classList.remove('on'); nm.setAttribute('aria-expanded', 'false');
+    if (a.dataset.k === 'room') { const b = document.body.classList; if (b.contains('nao') || b.contains('bt') || (window.__pPhong || 0) > .05) veNha(); return; }   // 13/11: Creative Room = về scene 1 (như nút "Back to creative room"); đang đứng ở đầu phòng thì không tải lại
+    moWeb(a.dataset.k, false); });
+  addEventListener('pointerdown', ev => { if (ds.classList.contains('on') && !ds.contains(ev.target) && !nm.contains(ev.target)) { ds.classList.remove('on'); nm.setAttribute('aria-expanded', 'false'); } });
+  // 13/11 (lỗi 2): đang mở pop-up (bảng "Open the file", cửa sổ Finder) thì ẩn Portfolio → / ≡ / thanh menu để không đè nút đóng
+  setInterval(() => document.body.classList.toggle('coLop', !!document.querySelector('#bThe.mo, #finder.mo')), 120);
+  if (location.hash === '#web') moWeb(null, false);
+  window.__moWeb = moWeb;
+})();
+</script>
+</body>
+</html>

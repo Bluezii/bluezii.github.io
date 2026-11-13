@@ -1,0 +1,149 @@
+{
+ "_huong_dan": "Nguồn nội dung duy nhất cho web. Sửa chữ ở đây, web tự đọc lại, không phải đụng vào animation. Ảnh: thả vào noi-dung/anh/<id>/ (1.jpg là ảnh chính, 2.jpg, 3.jpg... là ảnh phụ). Thiếu ảnh thì web tự dùng khung chữ thay thế. 'mo_ta_web' là đoạn dài ở phần chữ dưới animation; '[...]' là chỗ còn trống, anh điền sau.",
+ "du_an": [
+  {
+   "id": "antimusic",
+   "ten": "Antimusic",
+   "nam": "2025 – nay",
+   "vai_tro": "Founder / Creative / CEO",
+   "mot_dong": "The iconic café shop for people who hate music.",
+   "mo_ta_web": "[...]",
+   "lam_gi": [
+    "[...]"
+   ],
+   "link": ""
+  },
+  {
+   "id": "dien-nang",
+   "ten": "Điên Nặng Collective",
+   "nam": "2023 – nay",
+   "vai_tro": "Founder / Creative & Event Director",
+   "mot_dong": "Playground of Hanoi's most creative & craziest people.",
+   "mo_ta_web": "[...]",
+   "lam_gi": [
+    "[...]"
+   ],
+   "link": ""
+  },
+  {
+   "id": "electric",
+   "ten": "Electric Tattoo",
+   "nam": "2022 – nay",
+   "vai_tro": "Co-Founder / Marketing Director",
+   "mot_dong": "The most trusted tattoo studio for artists & celebrities.",
+   "mo_ta_web": "[...]",
+   "lam_gi": [
+    "[...]"
+   ],
+   "link": ""
+  },
+  {
+   "id": "gaztik",
+   "ten": "Gaztik",
+   "nam": "2025 – nay",
+   "vai_tro": "Artist Manager",
+   "mot_dong": "The one & only DnB duo DJ in Vietnam.",
+   "mo_ta_web": "[...]",
+   "lam_gi": [
+    "[...]"
+   ],
+   "link": ""
+  },
+  {
+   "id": "diners",
+   "ten": "The Diners Club",
+   "ten_ghi_chu": "sắp đổi tên brand: đổi ở đây là xong",
+   "nam": "2026 – nay",
+   "vai_tro": "Creative Director",
+   "mot_dong": "The club for people who love to eat & drink.",
+   "mo_ta_web": "[...]",
+   "lam_gi": [
+    "[...]"
+   ],
+   "link": ""
+  },
+  {
+   "id": "mikenco",
+   "ten": "Mikenco",
+   "nam": "2020 – 2023",
+   "vai_tro": "Creative Leader / Designer",
+   "mot_dong": "The new gen of Northern streetwear fashion.",
+   "mo_ta_web": "[...]",
+   "lam_gi": [
+    "[...]"
+   ],
+   "link": ""
+  },
+  {
+   "id": "freelance",
+   "ten": "Freelance Designer",
+   "nam": "2018 – 2024",
+   "vai_tro": "Designer",
+   "mot_dong": "My beloved journey.",
+   "mo_ta_web": "[...]",
+   "lam_gi": [
+    "[...]"
+   ],
+   "link": ""
+  },
+  {
+   "id": "va-nua",
+   "ten": "& many many more…",
+   "nam": "",
+   "vai_tro": "",
+   "mot_dong": "",
+   "mo_ta_web": "",
+   "lam_gi": [],
+   "link": ""
+  }
+ ],
+ "ky_nang": [
+  {
+   "id": "creative-art-direction",
+   "ten": "Creative & Art Direction",
+   "chi_so": 0,
+   "san_pham": []
+  },
+  {
+   "id": "brand-marketing",
+   "ten": "Brand & Marketing",
+   "chi_so": 0,
+   "san_pham": []
+  },
+  {
+   "id": "design-merch",
+   "ten": "2D Design & Merch Design",
+   "chi_so": 0,
+   "san_pham": []
+  },
+  {
+   "id": "vibe-code-ai",
+   "ten": "Vibe Code + AI",
+   "chi_so": 0,
+   "san_pham": []
+  },
+  {
+   "id": "content-seo",
+   "ten": "Content Creator & SEO",
+   "chi_so": 0,
+   "san_pham": []
+  },
+  {
+   "id": "operations",
+   "ten": "Operations Management",
+   "chi_so": 0,
+   "san_pham": [],
+   "mo_ta_ngan": "Finance, people, direction."
+  }
+ ],
+ "_ky_nang_ghi_chu": "chi_so = số trên bìa kiểu game (0–100), anh tự đặt. san_pham = danh sách {ten, nam, anh, du_an_id}: mỗi sản phẩm là 1 trang truyện.",
+ "gioi_thieu": {
+  "_ghi_chu": "Chữ scene About, bản nháp Blue viết, anh sửa tự do.",
+  "dong": [
+   "Creative director from Hà Nội.",
+   "I build brands, rooms and nights people remember.",
+   "Half the time I don't know what I'm making until it's made.",
+   "That's the part I like."
+  ]
+ }
+}
