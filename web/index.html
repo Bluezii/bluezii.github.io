@@ -647,7 +647,7 @@ let rs, rongCu = innerWidth; addEventListener('resize', () => { if (dt() && inne
 // 13/11 admin: tải noi-dung.json trước rồi mới dựng (chế độ sửa + có mã GitHub thì đọc thẳng bản mới nhất trên GitHub, khỏi chờ web cập nhật)
 function khoGH(){ try { const l = localStorage.getItem('bz_kho'); if (l) return l; } catch (e) {}
   const h = location.hostname; if (h.endsWith('.github.io')) { const o = h.split('.')[0], seg = location.pathname.split('/')[1]; return `${o}/${seg && seg !== 'web' && !seg.includes('.') ? seg : o + '.github.io'}`; }
-  return 'Trnghxx/bluezii-portfolio'; }
+  return 'Bluezii/bluezii.github.io'; }
 async function napND(){
   let ma = null; try { ma = SUA && localStorage.getItem('bz_ma'); } catch (e) {}
   if (ma) { try { const r = await fetch(`https://api.github.com/repos/${khoGH()}/contents/bao-tang/noi-dung.json?ref=main&t=${Date.now()}`, {headers:{Authorization:'Bearer ' + ma, Accept:'application/vnd.github.raw+json'}, cache:'no-store'}); if (r.ok) return await r.json(); } catch (e) {} }
