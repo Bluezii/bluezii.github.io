@@ -1636,6 +1636,7 @@ vD = -mvPosition.z; }`, fragmentShader: `varying float vD; void main(){ gl_FragC
         thanhKhung.forEach((b, i) => { const q = Math.min(1, Math.max(0, (tSup - 2.9 - i * .14) / 1.0)), e = q * q;   // rồi gãy rời từng thanh, xoắn vào giữa
           b.m.position.copy(b.p).multiplyScalar((1 - e) * (1 + .35 * Math.sin(Math.PI * Math.min(1, q * 2.5)))); b.m.position.z = e * -1.2;
           b.m.rotation.set(b.r.x + e * 2, b.r.y, b.r.z + e * (i % 2 ? 4 : -4)); b.m.scale.set(b.s.x * Math.max(.03, 1 - e), b.s.y * Math.max(.03, 1 - e), b.s.z * (1 + e * 8)); }); }
+      window.__tSup = sup.nguoc ? 0 : tSup;   // 13/11 anh: trang mẹ loang trắng từ lúc vỡ khối
       if (tSup > 4.7) den = Math.min(1, (tSup - 4.7) / .5);
       if (tSup > 5.3 && !sup.xong) { sup.xong = true; sup.cb && sup.cb(); }
       if (sup.nguoc && tSup <= 0) phucHoi();   // bản 6: tua ngược xong → về lại điểm dừng hố đen

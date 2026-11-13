@@ -34,7 +34,8 @@ bt.khiMatContext(tinh);
 const tram = [{ loai: 'cong' }, { loai: 'cua' }, ...duAn.map((da, i) => ({ loai: 'du-an', da, so: i + 1, k: i })), { loai: 'vo' }, { loai: 'ho-den', da: nhieu }];
 const namHien = s => String(s ?? '').replace(/\s*[–-]\s*nay$/i, ' – now');
 const bang = $('bang');
-const trongHoac = s => (!s || s === '[...]') ? '<span class="trong">[...]</span>' : esc(s);
+const trongHoac = s => (!s || s === '[...]') ? '' : esc(s);   // 13/11 anh: bỏ hết chữ nháp
+const ANH_WEB = { antimusic: ['antimusic-1', 'am-bday', 'am-mieng', 'antimusic-2'], electric: ['el-full', 'el-back', 'el-store', 'el-noi'], 'dien-nang': ['dn-lua', 'diennang-1', 'dn-alien', 'dn-crowd'], gaztik: ['gz-sawadika', 'gaztik-1', 'gz-coming'], mikenco: ['mik-angel', 'mik-kv', 'mik-duo', 'mik-sofa'], freelance: ['fr-lavish', 'fr-hnx', 'fr-blackred', 'fr-hnx2'] };
 bang.innerHTML = tram.map((t, i) => {
   if (t.loai === 'cong') return `<article data-i="${i}"><div class="so">THE GATE</div><h2>Night shift.</h2><p class="mot">Two guards, one open door. Newest work first, oldest last.</p><div class="so">SCROLL OR SWIPE <i style="font-style:normal;color:var(--xanh)">↓</i></div></article>`;
   if (t.loai === 'cua') return `<article data-i="${i}"><div class="so">THE DOOR</div><h2>Come in.</h2><p class="mot">Warm light inside. The museum runs backwards in time.</p></article>`;
@@ -279,7 +280,8 @@ async function moThe(i) {
   const t = tram[i]; if (t?.loai !== 'du-an') return;
   if (t.da.id === 'other') { moFinder(); return; }
   const d = t.da, f = await doFile(d.id);
-  const lam = (d.lam_gi || []).map(x => `<li>${trongHoac(x)}</li>`).join('');
+  const lam = (d.lam_gi || []).filter(x => x && x !== '[...]').map(x => `<li>${esc(x)}</li>`).join('');
+  if (!f.anh.length && ANH_WEB[d.id]) f.anh = ANH_WEB[d.id].map(n => COSO + '../web/anh/' + n + '.webp');
   const oTrong = (loai, k, duoi) => `<figure><div class="o${loai === 'Video' ? ' vid' : ''}">${loai} ${k} · not added yet<small>noi-dung/anh/${esc(d.id)}/${k}.${duoi}</small></div></figure>`;
   const anh = f.anh.length ? f.anh.map((u, k) => `<figure><div class="o"><img src="${u}" alt="${esc(d.ten)}, photo ${k + 1}" loading="lazy"></div><figcaption>${String(k + 1).padStart(2, '0')}</figcaption></figure>`).join('') : [1, 2, 3].map(k => oTrong('Photo', k, 'jpg')).join('');
   const vid = f.vid.length ? f.vid.map(u => `<figure><div class="o vid"><video src="${u}" controls playsinline preload="metadata"></video></div></figure>`).join('') : oTrong('Video', 1, 'mp4');
@@ -287,10 +289,10 @@ async function moThe(i) {
     <header><div class="huy">${HUY_SVG[d.id] || (LOGO[d.id] ? `<img src="${LOGO[d.id]}" alt="">` : `<span>${esc(d.ten)}</span>`)}</div>
       <div><div class="so">PROJECT ${String(t.so).padStart(2, '0')} · FILE</div><h3 id="theTen">${esc(d.ten)}</h3><div class="nam">${esc(namHien(d.nam))}</div></div></header>
     <dl class="tt"><div><dt>Role</dt><dd>${esc(d.vai_tro)}</dd></div><div><dt>Years</dt><dd>${esc(namHien(d.nam))}</dd></div><div><dt>In one line</dt><dd>${esc(d.mot_dong)}</dd></div>${d.link ? `<div><dt>Link</dt><dd><a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.link)}</a></dd></div>` : ''}</dl>
-    <h4>The story</h4><p class="dai">${trongHoac(d.mo_ta_web)}</p>
+    ${trongHoac(d.mo_ta_web) ? `<h4>The story</h4><p class="dai">${esc(d.mo_ta_web)}</p>` : ''}
     ${lam ? `<h4>What I did</h4><ul>${lam}</ul>` : ''}
     <h4>Photos${f.anh.length ? ` · ${f.anh.length}` : ''}</h4><div class="luoi">${anh}</div>
-    <h4>Video${f.vid.length ? ` · ${f.vid.length}` : ''}</h4><div class="luoi">${vid}</div>`;
+    ${f.vid.length ? `<h4>Video · ${f.vid.length}</h4><div class="luoi">${vid}</div>` : ''}`;
   the.classList.add('mo'); the.scrollTop = 0; $('dongThe').focus();
 }
 function dongThe() { the.classList.remove('mo'); the.querySelectorAll('video').forEach(v => v.pause()); }

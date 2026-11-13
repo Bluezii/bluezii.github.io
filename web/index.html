@@ -126,6 +126,14 @@ body.trong .nhacW{opacity:0;pointer-events:none}
 #nhacNam button{font-size:13px;min-height:40px}#nhacNam button:disabled{opacity:.4;cursor:not-allowed}#nhacNam button.on{background:var(--nen);color:var(--muc)}#nhacNam button:hover:not(:disabled){border-color:var(--nen)}
 .nhacDs{max-height:calc(100vh - 90px);overflow:auto}#nhacNam .so{font-family:var(--may);font-size:10px;opacity:.6;margin-right:8px}
 .nhacDs .hang1:hover{background:var(--nen);color:var(--muc)}
+@keyframes hienDan{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+body.hoVao .dai{animation:hienDan 1.1s .2s both cubic-bezier(.2,.7,.2,1)}body.hoVao .gioi{animation:hienDan .9s .75s both cubic-bezier(.2,.7,.2,1)}
+body.hoVao .ben{animation:hienDan .9s 1s both}body.hoVao .chan,body.hoVao .ve,body.hoVao .nhacW{animation:hienDan .8s 1.2s both}
+#nhacNam button{display:grid;grid-template-columns:24px 1fr;align-items:center;gap:6px;min-height:46px;padding:7px 10px;text-align:left}
+#nhacNam .tb{display:flex;flex-direction:column;gap:3px;min-width:0}
+#nhacNam .tb b{font-family:var(--to);font-weight:800;font-stretch:88%;font-size:14px;line-height:1.1;text-transform:uppercase;letter-spacing:.01em}
+#nhacNam .tb small{font-family:var(--than);font-size:11px;line-height:1.25;opacity:.6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#nhacNam .so{margin:0!important}
 .nhacDs .plDauW{display:flex;align-items:center;justify-content:space-between;gap:8px}#nhacTron{height:32px;padding:0 10px;background:none;border:1px solid rgba(255,255,255,.3);color:inherit;cursor:pointer;font-family:var(--may);font-size:10px;letter-spacing:.06em;text-transform:uppercase}#nhacTron span{font-size:13px}#nhacTron:hover{border-color:var(--nen)}#nhacTron[aria-pressed=true]{background:var(--nen);color:var(--muc)}
 
 /* 4 · chuyển cảnh: màn mép cong trồi lên → (ảnh nhỏ) + tên xáo → màn kéo lên đi */
@@ -312,7 +320,6 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 </style></head>
 <body>
 <div class="hat"></div>
-<div class="phac may">Phác v6 · ảnh demo · chữ trong [ ] anh viết</div>
 
 <div class="nap" id="nap"><div class="k"><div class="mix to" id="napChu" aria-label="Bluezii"></div><span class="nhan may" id="napNg">memory loading</span><span class="so may" id="so">000</span></div></div>
 
@@ -322,7 +329,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
   <div class="ten"><div class="mix" id="ten" aria-label="Bluezii"></div><span class="nhanky may" id="nhanky">Memory Nº 00</span></div>
   <div class="gioi mo-dan">
     <h2>BLUEZII© · WORKS</h2>
-    <p>Creative direction, brands and odd things made in Hanoi. Drag or scroll to drift through the memory. [giới thiệu: anh viết]</p>
+    <p>Creative direction, brands and odd things made in Hanoi. Drag or scroll to drift through the memory.</p>
     <div class="ky" id="ky"></div>
     <a href="#dsW" class="xuong" id="xuong"><i>↓</i> All projects</a>
   </div>
@@ -356,13 +363,13 @@ const KY_MO = [
  'Websites, bots and AI tools, built by talking to machines.',
  'Writing, social and search for small local brands.'];
 const SP = [   // 13/11 anh: còn 7 project; ảnh lấy từ Drive của anh (folder project, CV and Portfolio)
- {ten:'Antimusic',ky:1,mau:'#2a1512',nam:'2025',vai:'Founder',viec:'Brand · Venue · Poster',anh:['antimusic-1','am-bday','am-mieng','antimusic-2'],r:1.6,chu:1},
- {ten:'Electric Tattoo',ky:0,mau:'#1b1a17',nam:'2022',vai:'Co-Founder',viec:'Art direction · Studio · Social',anh:['el-full','el-back','el-store','el-noi'],r:.8},
- {ten:'Điên Nặng',ky:0,mau:'#2a0d0b',nam:'2023',vai:'Founder',viec:'Event · Flyer · Party rules',anh:['dn-lua','diennang-1','dn-alien','dn-crowd'],r:1.5,chu:1},
- {ten:'Duo DJ Gaztik',ky:1,mau:'#111111',nam:'2025',vai:'Artist Manager',viec:'Artist brand · Release',anh:['gz-sawadika','gaztik-1','gz-sawadika','gz-coming'],r:1,chu:1},
- {ten:'Mikenco',ky:2,mau:'#1a1512',nam:'2021',vai:'Creative Leader',viec:'Fashion · Lookbook · Key visual',anh:['mik-angel','mik-kv','mik-duo','mik-sofa'],r:.8},
- {ten:'Entropy Cocktail Club',ky:1,mau:'#111111',nam:'[...]',vai:'[...]',viec:'Brand · Cocktail bar',anh:['entropy-1'],r:1.3,chu:1,logo:1},
- {ten:'Freelance Design',ky:2,mau:'#111111',nam:'2019',vai:'Designer',viec:'Key visual · Poster · Lineup',anh:['fr-lavish','fr-hnx','fr-blackred','fr-hnx2'],r:.8,chu:1},
+ {ten:'Antimusic',mo:'The iconic café shop for people who hate music.',ky:1,mau:'#2a1512',nam:'2025',vai:'Founder',viec:'Brand · Venue · Poster',anh:['antimusic-1','am-bday','am-mieng','antimusic-2'],r:1.6,chu:1},
+ {ten:'Electric Tattoo',mo:'The most trusted tattoo studio for artists & celebrities.',ky:0,mau:'#1b1a17',nam:'2022',vai:'Co-Founder',viec:'Art direction · Studio · Social',anh:['el-full','el-back','el-store','el-noi'],r:.8},
+ {ten:'Điên Nặng',mo:"Playground of Hanoi's most creative & craziest people.",ky:0,mau:'#2a0d0b',nam:'2023',vai:'Founder',viec:'Event · Flyer · Party rules',anh:['dn-lua','diennang-1','dn-alien','dn-crowd'],r:1.5,chu:1},
+ {ten:'Duo DJ Gaztik',mo:'The one & only DnB duo DJ in Vietnam.',ky:1,mau:'#111111',nam:'2025',vai:'Artist Manager',viec:'Artist brand · Release',anh:['gz-sawadika','gaztik-1','gz-sawadika','gz-coming'],r:1,chu:1},
+ {ten:'Mikenco',mo:'The new gen of Northern streetwear fashion.',ky:2,mau:'#1a1512',nam:'2020',vai:'Creative Leader',viec:'Fashion · Lookbook · Key visual',anh:['mik-angel','mik-kv','mik-duo','mik-sofa'],r:.8},
+ {ten:'Entropy Cocktail Club',ky:1,mau:'#111111',nam:'',vai:'',viec:'Brand · Cocktail bar',anh:['entropy-1'],r:1.3,chu:1,logo:1},
+ {ten:'Freelance Design',mo:'My beloved journey.',ky:2,mau:'#111111',nam:'2018',vai:'Designer',viec:'Key visual · Poster · Lineup',anh:['fr-lavish','fr-hnx','fr-blackred','fr-hnx2'],r:.8,chu:1},
 ];
 const URL_ANH = n => `url(anh/${n}.webp)`;
 const giam = matchMedia('(prefers-reduced-motion:reduce)').matches;
@@ -492,7 +499,7 @@ function locKy(i){ loc = i; ky.querySelectorAll('button').forEach((z, j) => z.cl
 const dsW = document.getElementById('dsW');
 function veDs(){
   const ds = SP.map((s, i) => [s, i]).filter(([s]) => loc < 0 || s.ky === loc);
-  dsW.innerHTML = `<header class="dau"><div class="mix" data-chu="Work"></div><p>${ds.length} projects, 2019 — 2026. ${coChuot ? 'Hover to remember, click to go in.' : 'Tap to go in.'}</p></header>`
+  dsW.innerHTML = `<header class="dau"><div class="mix" data-chu="Work"></div><p>${ds.length} projects, 2018 — 2026. ${coChuot ? 'Hover to remember, click to go in.' : 'Tap to go in.'}</p></header>`
     + `<div class="ds">${ds.map(([s, i], n) => `<a href="#" class="hang" data-sp="${i}" data-anh="${s.anh[0]}" data-logo="${s.logo ? 1 : ''}">
       <span class="may">${String(n + 1).padStart(2, '0')}</span><b>${s.ten}</b><span class="p2">${KY[s.ky]}</span><span class="p2 may an">${s.nam}</span><span class="p2 an">${s.vai}</span></a>`).join('')}</div>`;
   const m = dsW.querySelector('.mix'); dungMix(m, 'Work', TRANG.works.kieu, 0); m.classList.add('vao');
@@ -557,8 +564,8 @@ function dungTrang(s){
   const k = SP.indexOf(s), sau = SP[(k+1) % SP.length];
   const phu = [1, 2, 3].map(j => s.anh[j % s.anh.length]);
   moKhung(s.logo ? 'logo' : '', `<div class="phu"><i style="--anh:${URL_ANH(s.anh[0])}"></i><span class="tag">${KY[s.ky]}</span></div><h1 class="to">${chu(s.ten.toUpperCase())}</h1>
-  <div class="tt hien"><div><small>Year</small>${s.nam}</div><div><small>Role</small>${s.vai}</div><div><small>Did</small>${s.viec}</div><div><small>Client</small>[...]</div></div>
-  <p class="mt hien">[Mô tả sản phẩm: bối cảnh, đã làm gì, kết quả. Anh điền sau.]</p>
+  <div class="tt hien">${s.nam ? `<div><small>Year</small>${s.nam}</div>` : ''}${s.vai ? `<div><small>Role</small>${s.vai}</div>` : ''}<div><small>Did</small>${s.viec}</div></div>
+  ${s.mo ? `<p class="mt hien">${s.mo}</p>` : ''}
   <div class="luoi">${phu.map(n => `<div style="--anh:${URL_ANH(n)}"></div>`).join('')}</div>
   <div class="tiep to hien" data-sp="${(k+1) % SP.length}"><span>Next →</span><span>${sau.ten}</span></div>`);
   da.style.setProperty('--mau', s.mau);
@@ -579,23 +586,22 @@ function moTrang(k){ if (k === 'works') { veWork(); return; } an(); chuyen(TRANG
 function dungMenu(k){
   let h = '';
   if (k === 'works') {
-    h = dauTrang(k, `${SP.length} projects, 2019 — 2026. Hover to remember, click to go in.`)
+    h = dauTrang(k, `${SP.length} projects, 2018 — 2026. Hover to remember, click to go in.`)
       + `<div class="ds">${SP.map((s, i) => `<a href="#" class="hang hien" data-sp="${i}" data-anh="${s.anh[0]}" data-logo="${s.logo ? 1 : ''}">
         <span class="may">${String(i + 1).padStart(2, '0')}</span><b>${s.ten}</b><span class="p2">${KY[s.ky]}</span><span class="p2 may an">${s.nam}</span><span class="p2 an">${s.vai}</span></a>`).join('')}</div>`;
   } else if (k === 'skills') {
-    h = dauTrang(k, `${KY.length} things I do, and the work that proves it. <br><span class="nhap may">mô tả: nháp</span>`)
+    h = dauTrang(k, `${KY.length} things I do, and the work that proves it.`)
       + `<div class="kn">${KY.map((t, i) => `<section class="hien"><span class="may">${String(i + 1).padStart(2, '0')}</span>
         <div><h2 class="to">${t}</h2></div>
         <div><p>${KY_MO[i]}</p><div class="mini">${SP.map((s, j) => s.ky !== i ? '' : `<button class="${s.logo ? 'logo' : ''}" data-sp="${j}"><i style="--anh:${URL_ANH(s.anh[0])}"></i><span>${s.ten}</span></button>`).join('')}</div></div></section>`).join('')}</div>`;
   } else if (k === 'about') {
-    h = dauTrang(k, `Bluezii (Trung Hiếu). Hanoi. <br><span class="nhap may">lời giới thiệu: nháp, anh viết lại</span>`)
+    h = dauTrang(k, `Bluezii (Trung Hiếu). Hanoi.`)
       + `<div class="ab"><p class="loi hien">I run <span class="dao">venues</span>, ink and <em>noise</em> in Hanoi — and build the <u>brands</u>, posters, bots and websites around them. <s>Normal</s> is not the brief.</p>
-        <ul class="hien">${[['Antimusic','Founder'],['Electric Tattoo','Co-Founder'],['Điên Nặng','Founder'],['Gaztik','Artist Manager'],['The Diners Club','Creative Director'],['Bluezii OS','Vibe coder']].map(([a, b]) => `<li><b>${a}</b><span>${b}</span></li>`).join('')}</ul>
-        <p class="p hien">[Đoạn kể dài hơn: anh bắt đầu từ đâu, đang làm gì, muốn làm gì tiếp. Anh viết.]</p></div>`;
+        <ul class="hien">${[['Antimusic','Founder'],['Electric Tattoo','Co-Founder'],['Điên Nặng','Founder'],['Gaztik','Artist Manager'],['The Diners Club','Creative Director'],['Mikenco','Creative Leader']].map(([a, b]) => `<li><b>${a}</b><span>${b}</span></li>`).join('')}</ul></div>`;
   } else {
     h = dauTrang(k, `Brand, art direction, merch, web. Hanoi or remote.`)
       + `<div class="lt"><a class="mail hien" href="mailto:ngth.contact@gmail.com">ngth.contact@<wbr>gmail.com</a>
-        <div class="luoi2 hien"><div><small>Instagram</small><a href="https://instagram.com/bluezii.papi" target="_blank" rel="noopener">@bluezii.papi</a></div><div><small>Based in</small>Hanoi, Vietnam</div><div><small>Open for</small>Art direction · Brand · Merch · Web <span class="nhap may">nháp</span></div></div></div>`;
+        <div class="luoi2 hien"><div><small>Instagram</small><a href="https://instagram.com/bluezii.papi" target="_blank" rel="noopener">@bluezii.papi</a></div><div><small>Based in</small>Hanoi, Vietnam</div><div><small>Open for</small>Art direction · Brand · Merch · Web</div></div></div>`;
   }
   moKhung('trang-' + k, h);
   da.style.setProperty('--mau', '#111214');
@@ -622,7 +628,7 @@ veBTn.onclick = () => coMe && parent.postMessage({bz:'ve-bt'}, '*');
 let nhacBat = false;
 function veNhac(){ nhacW.classList.toggle('chay', nhacBat); document.getElementById('nhacChu').textContent = nhacBat ? 'Playlist · on' : 'Playlist'; document.getElementById('nhacBatChu').textContent = nhacBat ? 'Pause' : 'Play'; }
 let pl = null;   // 13/11: danh sách bài do trang mẹ gửi xuống (chung cho cả 4 cảnh)
-function vePLW(){ if (!pl) return; document.getElementById('nhacTron').setAttribute('aria-pressed', !!pl.tron); document.getElementById('nhacNam').innerHTML = pl.ds.map((b, i) => `<button type="button" data-id="${b.id || ''}" ${b.id ? '' : 'disabled'} class="${b.id && b.id === pl.bai ? 'on' : ''}"><span><span class="so">${String(i + 1).padStart(2, '0')}</span>${b.ten}</span><span class="may">${b.ca}</span></button>`).join(''); document.getElementById('nhacDangTen').textContent = pl.ten || ''; }
+function vePLW(){ if (!pl) return; document.getElementById('nhacTron').setAttribute('aria-pressed', !!pl.tron); document.getElementById('nhacNam').innerHTML = pl.ds.map((b, i) => `<button type="button" data-id="${b.id || ''}" ${b.id ? '' : 'disabled'} class="${b.id && b.id === pl.bai ? 'on' : ''}"><span class="so">${String(i + 1).padStart(2, '0')}</span><span class="tb"><b>${b.ten}</b><small>${b.ca}</small></span></button>`).join(''); document.getElementById('nhacDangTen').textContent = pl.ten || ''; }
 document.getElementById('nhacTron').addEventListener('click', e => { e.stopPropagation(); if (coMe) parent.postMessage({bz:'tron'}, '*'); });
 document.getElementById('nhacNam').addEventListener('click', e => { const b = e.target.closest('button[data-id]'); if (b && b.dataset.id && coMe) parent.postMessage({bz:'phat', id: b.dataset.id}, '*'); });
 document.getElementById('nutNhacW').onclick = () => { const on = !nhacW.classList.contains('mo'); nhacW.classList.toggle('mo', on); document.getElementById('nutNhacW').setAttribute('aria-expanded', on); };
@@ -631,7 +637,7 @@ addEventListener('pointerdown', e => { if (nhacW.classList.contains('mo') && !nh
 if (coMe) { nhacW.hidden = false; parent.postMessage({bz:'hoi'}, '*'); }
 addEventListener('message', e => { if (e.source !== parent || !e.data) return; const d = e.data;
   if (d.bz === 'trangthai') { veBTn.hidden = !d.bt; nhacBat = !!d.nhac; veNhac(); if (d.pl) { pl = d.pl; vePLW(); } }
-  else if (d.bz === 'hien') { if (!the.length) ve(); if (!daBatDau) { daBatDau = true; batDau(); } if (d.trang) moNgay(d.trang); }   // 13/11: web được tải trước lúc còn ẩn (bề ngang 0) → dựng lại dải ảnh khi hiện
+  else if (d.bz === 'hien') { if (!d.trang && !daBatDau) document.body.classList.add('hoVao'); if (!the.length) ve(); if (!daBatDau) { daBatDau = true; batDau(); } if (d.trang) moNgay(d.trang); }   // 13/11: web được tải trước lúc còn ẩn (bề ngang 0) → dựng lại dải ảnh khi hiện
 });
 if (HO && !coMe) { daBatDau = true; batDau(); }   // mở web/index.html?ho trực tiếp (không có trang mẹ)
 // ===== 13/11: âm thanh khi bấm (tạo bằng code, không tải file) =====
