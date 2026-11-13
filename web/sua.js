@@ -105,7 +105,7 @@ batSua(doc.body);
 new MutationObserver(ms => ms.forEach(m => m.addedNodes.forEach(n => n.nodeType === 1 && batSua(n.parentNode || n)))).observe(doc.body, {childList:true, subtree:true});
 doc.addEventListener('input', e => {
   const el = e.target.closest && e.target.closest('[data-sua]'); if (!el) return;
-  let v = el.hasAttribute('data-html') ? sachHTML(el) : el.innerText.replace(/ /g, ' ');
+  let v = el.hasAttribute('data-html') ? sachHTML(el) : (el.hasAttribute('data-nhieu') || el.hasAttribute('data-ds') ? el.innerText : el.textContent).replace(/ /g, ' ');   // textContent: CSS viết hoa không làm đổi chữ lưu
   if (!el.hasAttribute('data-nhieu')) v = v.replace(/\s*\n\s*/g, ' ');
   if (el.hasAttribute('data-ds')) v = v.split('\n').map(x => x.trim()).filter(Boolean);
   else if (typeof v === 'string') v = v.trim();
