@@ -559,7 +559,7 @@ window.__amThanh = () => (amBat && ac && ganTong) ? { ac, ra: ganTong, nhac: nha
   if (innerWidth < 700) Object.assign(goi.style, { right: 'max(12px,env(safe-area-inset-right,0px))', bottom: 'calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 66px)' });
   document.body.appendChild(goi);
   const tat = () => { goi.style.opacity = 0; setTimeout(() => goi.remove(), 800); removeEventListener('pointerdown', mo, true); removeEventListener('keydown', mo, true); };
-  const mo = e => { if (NUT.contains(e.target)) { tat(); return; } if (!amBat) { datAm(true); batNhac(true); } tat(); };
+  const mo = e => { if (NUT.contains(e.target) || (e.target.closest && e.target.closest('#plAm'))) { tat(); return; } if (!amBat) { datAm(true); batNhac(true); } tat(); };
   addEventListener('pointerdown', mo, true); addEventListener('keydown', mo, true); }
 // nút nghe lại I Like You (dùng ở cả phòng lẫn trong não): bật tiếng, chọn bài nền, phát lại từ đầu
 // 13/11 anh: nút nghe lại I Like You ở PHÒNG (cùng chỗ, cùng kiểu với nút trong não)
@@ -610,7 +610,8 @@ function cheDoPL(){ if (audio) audio.loop = false; if (e85) e85.loop = false; if
 window.__phatBai = phatBai;
 window.__playlist = () => ({ds: PLAYLIST, bai: baiDang(), ten: tenDang(), am: amBat, tron});
 const PL = document.createElement('div'); PL.id = 'plW';
-PL.innerHTML = `<div id="plDs" role="dialog" aria-label="Playlist"><div class="plDau"><p class="pt">Playlist · ${PLAYLIST.length} tracks</p><span class="plNutP"><button type="button" id="plTron" aria-pressed="false"><span aria-hidden="true">⤨</span> Shuffle</button><button type="button" id="plTat">Mute</button></span></div><div id="plHang"></div></div>`
+PL.innerHTML = `<div id="plDs" role="dialog" aria-label="Playlist"><div class="plDau"><p class="pt">Playlist · ${PLAYLIST.length} tracks</p><button type="button" id="plTron" aria-pressed="false"><span aria-hidden="true">⤨</span> Shuffle</button></div><div id="plHang"></div></div>`
+  + `<button type="button" id="plAm" aria-pressed="false" aria-label="Sound on"><svg class="loa" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 7.5h3l4.5-3.5v12L6 12.5H3z" fill="currentColor"/><path class="song" d="M13.2 7.2a4 4 0 0 1 0 5.6M15.6 5a7.2 7.2 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="cheo" d="M13.5 7.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>`
   + `<button type="button" id="plNut" aria-expanded="false" aria-controls="plDs"><span class="eq"><i></i><i></i><i></i></span><b>Playlist</b><em id="plTen"></em><span class="mui" aria-hidden="true">▾</span></button>`;
 document.body.appendChild(PL);
 const plNut = document.getElementById('plNut'), plHang = document.getElementById('plHang');
@@ -621,12 +622,12 @@ function vePL(){
   PL.classList.toggle('chay', amBat); veNhanPL();
 }
 // 13/11 anh: gộp nút Sound vào nút Playlist. Đang tắt tiếng: nút ghi "Sound off", bấm = bật tiếng. Đang có tiếng: bấm = mở danh sách bài (trong đó có nút Mute)
-function veNhanPL(){ PL.classList.toggle('tat', !amBat); plNut.querySelector('b').textContent = amBat ? 'Playlist' : 'Sound off'; plNut.setAttribute('aria-label', amBat ? 'Playlist' : 'Turn sound on'); }
+function veNhanPL(){ PL.classList.toggle('tat', !amBat); const a = document.getElementById('plAm'); a.setAttribute('aria-pressed', amBat); a.setAttribute('aria-label', amBat ? 'Sound off' : 'Sound on'); }
 document.getElementById('plTron').addEventListener('click', () => batTron());
 plHang.addEventListener('click', e => { const b = e.target.closest('button[data-id]'); if (b && b.dataset.id) phatBai(b.dataset.id); });
 const moPL = on => { PL.classList.toggle('mo', on); plNut.setAttribute('aria-expanded', on); };
-plNut.addEventListener('click', e => { e.stopPropagation(); if (!amBat) { NUT.click(); moPL(false); vePL(); return; } vePL(); moPL(!PL.classList.contains('mo')); });
-document.getElementById('plTat').addEventListener('click', () => { if (amBat) NUT.click(); moPL(false); vePL(); });
+plNut.addEventListener('click', e => { e.stopPropagation(); vePL(); moPL(!PL.classList.contains('mo')); });
+document.getElementById('plAm').addEventListener('click', e => { e.stopPropagation(); NUT.click(); if (amBat) batNhac(true); vePL(); });   // 13/11 anh: ô loa nhỏ = bật/tắt tiếng
 PL.addEventListener('pointerdown', e => e.stopPropagation());
 addEventListener('pointerdown', () => PL.classList.contains('mo') && moPL(false));
 addEventListener('keydown', e => { if (e.key === 'Escape') moPL(false); });
@@ -655,8 +656,13 @@ body.hien:not(.oweb):not(.coLop) #plW{opacity:1;pointer-events:auto}
 #plHang button:hover:not(:disabled){border-color:#f4f3ee}
 #plHang button.on{background:#f4f3ee;color:#0b0b0c}#plHang button.on .so,#plHang button.on .ca{opacity:.7}
 #plHang button:disabled{opacity:.35;cursor:not-allowed}
-#plW.tat .mui,#plW.tat em{display:none}#plW:not(.tat) #plNut{background:#f4f3ee;color:#0b0b0c;border-color:#f4f3ee}
-#plDs .plNutP{display:flex;gap:6px}#plTat{height:32px;padding:0 10px;background:none;border:1px solid rgba(244,243,238,.3);color:inherit;cursor:pointer;font:400 10px/1 'Space Mono',monospace;letter-spacing:.06em;text-transform:uppercase}#plTat:hover{border-color:#f4f3ee}
+html:root body #phongNhac,html:root body #naoNhac{display:none!important}   /* 13/11 anh: bỏ nút ↺ I Like You (đã là bài 01 trong Playlist) */
+#plW{display:flex;align-items:stretch}
+#plAm{width:44px;height:44px;flex:none;display:grid;place-items:center;padding:0;background:rgba(11,11,12,.42);border:1px solid rgba(244,243,238,.16);border-right:0;color:#f4f3ee;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+#plAm:hover,#plAm:focus-visible{border-color:rgba(244,243,238,.5);outline:0}
+#plAm[aria-pressed="true"]{background:#f4f3ee;color:#0b0b0c;border-color:#f4f3ee}
+#plAm .cheo{display:none}#plAm[aria-pressed="false"] .song{display:none}#plAm[aria-pressed="false"] .cheo{display:inline}
+#plW.tat #plNut em{opacity:.35}
 @media (max-width:700px){#plW{right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 12px)}
   #plNut{padding:0 12px;max-width:calc(100vw - 160px)}#plNut em{display:none}
   #plDs{position:fixed;right:12px;left:12px;width:auto;bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 64px);max-height:calc(100vh - 200px)}

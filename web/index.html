@@ -119,6 +119,8 @@ body.trong .nhacW{opacity:0;pointer-events:none}
 @keyframes eq{0%,100%{height:30%}50%{height:100%}}
 .nhacDs{position:absolute;right:0;top:calc(100% + 6px);width:280px;background:var(--muc);color:var(--nen);padding:12px;display:none}
 .nhacW.mo .nhacDs{display:block}
+.nhacW{display:flex;align-items:stretch}#nhacAm{width:40px;min-width:40px;padding:0;justify-content:center;border-right:1px solid rgba(255,255,255,.18)}#nhacAm[aria-pressed=true]{background:var(--nen);color:var(--muc);box-shadow:inset 0 0 0 1px var(--muc)}#nhacAm .cheo{display:none}#nhacAm[aria-pressed=false] .song{display:none}#nhacAm[aria-pressed=false] .cheo{display:inline}
+#nhacTenW{font-family:var(--may);font-style:normal;font-size:10px;letter-spacing:.06em;text-transform:uppercase;opacity:.55;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#nhacTenW:empty{display:none}.nhacDs .hang1{display:none!important}
 .nhacW .mui{font-size:11px;transition:transform .2s}.nhacW.mo .mui{transform:rotate(180deg)}
 .nhacDs p{font-size:11px;opacity:.75;margin-bottom:8px}.nhacDs .mo5{margin:10px 0 0}
 .nhacDs .hang1,#nhacNam button{width:100%;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:0 10px;background:none;border:1px solid rgba(255,255,255,.25);color:inherit;cursor:pointer;text-align:left;margin-bottom:6px}
@@ -243,6 +245,7 @@ body.hoVao .ben{animation:hienDan .9s 1s both}body.hoVao .chan,body.hoVao .ve,bo
   .nhacW{right:12px;top:calc(env(safe-area-inset-top,0px) + 16px)}
   .nhacW>button{min-height:44px;min-width:44px;justify-content:center}
   .nhacW>button{padding:0 12px}
+  #nhacAm{width:44px;min-width:44px;padding:0}#nhacTenW{display:none}
   .ve button{padding:0 10px}
   .nhacDs{width:min(280px,calc(100vw - 24px))}
   .phac{display:none}
@@ -338,7 +341,7 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 <footer class="chan"><span data-sua="web.chu.chan_ban_quyen">© 2026 Bluezii · Hanoi</span><nav><a href="https://instagram.com/bluezii.papi" target="_blank" rel="noopener" id="chanIG"><span data-sua="web.chu.chan_ig">Instagram</span></a><a href="mailto:ngth.contact@gmail.com" id="chanMail"><span data-sua="web.chu.chan_mail">Email</span></a><a href="#" data-trang="about"><span data-sua="web.chu.chan_about">Still figuring out who I am</span></a></nav></footer>
 
 <div class="ve" id="veNhom"><button class="tag" id="veBT" type="button" hidden>← <span class="cd">Back into the </span>museum</button><button class="tag" id="ve" type="button">↺ <span class="cd" data-sua="web.chu.ve_dau">Back to </span><span data-sua="web.chu.ve_ten">creative room</span></button></div>
-<div class="nhacW" id="nhacW" hidden><button class="tag" id="nutNhacW" type="button" aria-expanded="false"><span class="eq"><i></i><i></i><i></i></span><span id="nhacChu">Playlist</span><span class="mui" aria-hidden="true">▾</span></button>
+<div class="nhacW" id="nhacW" hidden><button class="tag" id="nhacAm" type="button" aria-pressed="false" aria-label="Sound on"><svg class="loa" viewBox="0 0 20 20" width="18" height="18" aria-hidden="true"><path d="M3 7.5h3l4.5-3.5v12L6 12.5H3z" fill="currentColor"/><path class="song" d="M13.2 7.2a4 4 0 0 1 0 5.6M15.6 5a7.2 7.2 0 0 1 0 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="cheo" d="M13.5 7.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button><button class="tag" id="nutNhacW" type="button" aria-expanded="false"><span class="eq"><i></i><i></i><i></i></span><span id="nhacChu">Playlist</span><em id="nhacTenW"></em><span class="mui" aria-hidden="true">▾</span></button>
   <div class="nhacDs" id="nhacDs"><p class="may plDauW"><span data-sua="web.chu.pl_dau">Playlist · pick a track</span><button type="button" id="nhacTron" aria-pressed="false"><span aria-hidden="true">⤨</span> Shuffle</button></p><button type="button" id="nhacBat" class="hang1"><b id="nhacBatChu">Play</b><span class="may" id="nhacDangTen">I Like You</span></button>
   <div id="nhacNam"></div></div></div>
 <nav class="ben" id="ben" aria-label="Pages">
@@ -668,17 +671,18 @@ window.__mo = i => mo(SP[i]); window.__trang = k => moTrang(k);
 const coMe = parent !== window, veBTn = document.getElementById('veBT'), nhacW = document.getElementById('nhacW');
 veBTn.onclick = () => coMe && parent.postMessage({bz:'ve-bt'}, '*');
 let nhacBat = false;
-function veNhac(){ nhacW.classList.toggle('chay', nhacBat); document.getElementById('nhacChu').textContent = nhacBat ? 'Playlist · on' : 'Playlist'; document.getElementById('nhacBatChu').textContent = nhacBat ? 'Pause' : 'Play'; }
+function veNhac(){ nhacW.classList.toggle('chay', nhacBat); const am = document.getElementById('nhacAm'); am.setAttribute('aria-pressed', nhacBat); am.setAttribute('aria-label', nhacBat ? 'Sound off' : 'Sound on'); if (pl) document.getElementById('nhacTenW').textContent = pl.ten || ''; document.getElementById('nhacBatChu').textContent = nhacBat ? 'Pause' : 'Play'; }
 let pl = null;   // 13/11: danh sách bài do trang mẹ gửi xuống (chung cho cả 4 cảnh)
 function vePLW(){ if (!pl) return; document.getElementById('nhacTron').setAttribute('aria-pressed', !!pl.tron); document.getElementById('nhacNam').innerHTML = pl.ds.map((b, i) => `<button type="button" data-id="${b.id || ''}" ${b.id ? '' : 'disabled'} class="${b.id && b.id === pl.bai ? 'on' : ''}"><span class="so">${String(i + 1).padStart(2, '0')}</span><span class="tb"><b>${b.ten}</b><small>${b.ca}</small></span></button>`).join(''); document.getElementById('nhacDangTen').textContent = pl.ten || ''; }
 document.getElementById('nhacTron').addEventListener('click', e => { e.stopPropagation(); if (coMe) parent.postMessage({bz:'tron'}, '*'); });
 document.getElementById('nhacNam').addEventListener('click', e => { const b = e.target.closest('button[data-id]'); if (b && b.dataset.id && coMe) parent.postMessage({bz:'phat', id: b.dataset.id}, '*'); });
 document.getElementById('nutNhacW').onclick = () => { const on = !nhacW.classList.contains('mo'); nhacW.classList.toggle('mo', on); document.getElementById('nutNhacW').setAttribute('aria-expanded', on); };
+document.getElementById('nhacAm').onclick = () => { nhacBat = !nhacBat; veNhac(); coMe && parent.postMessage({bz:'nhac', bat: nhacBat}, '*'); };   // 13/11 anh: ô loa nhỏ dính nút Playlist, giống trang chính
 document.getElementById('nhacBat').onclick = () => { nhacBat = !nhacBat; veNhac(); coMe && parent.postMessage({bz:'nhac', bat: nhacBat}, '*'); };
 addEventListener('pointerdown', e => { if (nhacW.classList.contains('mo') && !nhacW.contains(e.target)) { nhacW.classList.remove('mo'); document.getElementById('nutNhacW').setAttribute('aria-expanded', 'false'); } });
 if (coMe) { nhacW.hidden = false; parent.postMessage({bz:'hoi'}, '*'); }
 addEventListener('message', e => { if (e.source !== parent || !e.data) return; const d = e.data;
-  if (d.bz === 'trangthai') { veBTn.hidden = !d.bt; nhacBat = !!d.nhac; veNhac(); if (d.pl) { pl = d.pl; vePLW(); } }
+  if (d.bz === 'trangthai') { veBTn.hidden = !d.bt; nhacBat = !!d.nhac; if (d.pl) { pl = d.pl; vePLW(); } veNhac(); }
   else if (d.bz === 'hien') { if (!d.trang && !daBatDau) document.body.classList.add('hoVao'); if (!the.length) ve(); if (!daBatDau) { daBatDau = true; batDau(); } if (d.trang) moNgay(d.trang); }   // 13/11: web được tải trước lúc còn ẩn (bề ngang 0) → dựng lại dải ảnh khi hiện
 });
 if (HO && !coMe) { daBatDau = true; batDau(); }   // mở web/index.html?ho trực tiếp (không có trang mẹ)
