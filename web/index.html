@@ -328,14 +328,14 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 <section class="duoi" id="duoi">
   <div class="ten"><div class="mix" id="ten" aria-label="Bluezii"></div><span class="nhanky may" id="nhanky">Memory Nº 00</span></div>
   <div class="gioi mo-dan">
-    <h2>BLUEZII© · WORKS</h2>
-    <p>Creative direction, brands and odd things made in Hanoi. Drag or scroll to drift through the memory.</p>
+    <h2 data-sua="web.chu.home_h2">BLUEZII© · WORKS</h2>
+    <p data-sua="web.chu.home_p">Creative direction, brands and odd things made in Hanoi. Drag or scroll to drift through the memory.</p>
     <div class="ky" id="ky"></div>
     <a href="#dsW" class="xuong" id="xuong"><i>↓</i> All projects</a>
   </div>
 </section>
 <section class="dsW" id="dsW" aria-label="All projects"></section>
-<footer class="chan"><span>© 2026 Bluezii · Hanoi</span><nav><a href="https://instagram.com/bluezii.papi" target="_blank" rel="noopener">Instagram</a><a href="mailto:ngth.contact@gmail.com">Email</a><a href="#" data-trang="about">Still figuring out who I am</a></nav></footer>
+<footer class="chan"><span>© 2026 Bluezii · Hanoi</span><nav><a href="https://instagram.com/bluezii.papi" target="_blank" rel="noopener" id="chanIG">Instagram</a><a href="mailto:ngth.contact@gmail.com" id="chanMail">Email</a><a href="#" data-trang="about"><span data-sua="web.chu.chan_about">Still figuring out who I am</span></a></nav></footer>
 
 <div class="ve" id="veNhom"><button class="tag" id="veBT" type="button" hidden>← <span class="cd">Back into the </span>museum</button><button class="tag" id="ve" type="button">↺ <span class="cd">Back to </span>creative room</button></div>
 <div class="nhacW" id="nhacW" hidden><button class="tag" id="nutNhacW" type="button" aria-expanded="false"><span class="eq"><i></i><i></i><i></i></span><span id="nhacChu">Playlist</span><span class="mui" aria-hidden="true">▾</span></button>
@@ -354,31 +354,49 @@ html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
 <div class="xemtruoc" id="xemtruoc"></div>
 
 <script>
-// Danh sách, skill, "viec" và mô tả skill là bản nháp để demo; anh sửa sau. Ảnh lấy từ folder các project trong máy.
-const KY = ['Creative & Art Direction','Brand & Marketing','2D & Merch Design','Vibe Code + AI','Content & SEO'];
-const KY_MO = [
- 'Concepts, visual direction and the look of a night, a studio or a drop.',
- 'Positioning, identity and campaigns that get people through the door.',
- 'Logos, posters, lineups and things people wear.',
- 'Websites, bots and AI tools, built by talking to machines.',
- 'Writing, social and search for small local brands.'];
-const SP = [   // 13/11 anh: còn 7 project; ảnh lấy từ Drive của anh (folder project, CV and Portfolio)
- {ten:'Antimusic',mo:'The iconic café shop for people who hate music.',ky:1,mau:'#2a1512',nam:'2025',vai:'Founder',viec:'Brand · Venue · Poster',anh:['antimusic-1','am-bday','am-mieng','antimusic-2'],r:1.6,chu:1},
- {ten:'Electric Tattoo',mo:'The most trusted tattoo studio for artists & celebrities.',ky:0,mau:'#1b1a17',nam:'2022',vai:'Co-Founder',viec:'Art direction · Studio · Social',anh:['el-full','el-back','el-store','el-noi'],r:.8},
- {ten:'Điên Nặng',mo:"Playground of Hanoi's most creative & craziest people.",ky:0,mau:'#2a0d0b',nam:'2023',vai:'Founder',viec:'Event · Flyer · Party rules',anh:['dn-lua','diennang-1','dn-alien','dn-crowd'],r:1.5,chu:1},
- {ten:'Duo DJ Gaztik',mo:'The one & only DnB duo DJ in Vietnam.',ky:1,mau:'#111111',nam:'2025',vai:'Artist Manager',viec:'Artist brand · Release',anh:['gz-sawadika','gaztik-1','gz-sawadika','gz-coming'],r:1,chu:1},
- {ten:'Mikenco',mo:'The new gen of Northern streetwear fashion.',ky:2,mau:'#1a1512',nam:'2020',vai:'Creative Leader',viec:'Fashion · Lookbook · Key visual',anh:['mik-angel','mik-kv','mik-duo','mik-sofa'],r:.8},
- {ten:'Entropy Cocktail Club',ky:1,mau:'#111111',nam:'',vai:'',viec:'Brand · Cocktail bar',anh:['entropy-1'],r:1.3,chu:1,logo:1},
- {ten:'Freelance Design',mo:'My beloved journey.',ky:2,mau:'#111111',nam:'2018',vai:'Designer',viec:'Key visual · Poster · Lineup',anh:['fr-lavish','fr-hnx','fr-blackred','fr-hnx2'],r:.8,chu:1},
+// 13/11 admin: nội dung đọc từ ../bao-tang/noi-dung.json (chung với bảo tàng, anh sửa qua ?sua). Bản cứng dưới đây chỉ dùng khi không tải được file.
+const SP0 = [
+ {id:'antimusic',ten:'Antimusic',mo:'The iconic café shop for people who hate music.',ky:1,mau:'#2a1512',nam:'2025 – nay',vai:'Founder',viec:'Brand · Venue · Poster',anh:['antimusic-1','am-bday','am-mieng','antimusic-2'],r:1.6,chu:1},
+ {id:'electric',ten:'Electric Tattoo',mo:'The most trusted tattoo studio for artists & celebrities.',ky:0,mau:'#1b1a17',nam:'2022 – nay',vai:'Co-Founder',viec:'Art direction · Studio · Social',anh:['el-full','el-back','el-store','el-noi'],r:.8},
+ {id:'dien-nang',ten:'Điên Nặng',mo:"Playground of Hanoi's most creative & craziest people.",ky:0,mau:'#2a0d0b',nam:'2023 – nay',vai:'Founder',viec:'Event · Flyer · Party rules',anh:['dn-lua','diennang-1','dn-alien','dn-crowd'],r:1.5,chu:1},
+ {id:'gaztik',ten:'Duo DJ Gaztik',mo:'The one & only DnB duo DJ in Vietnam.',ky:1,mau:'#111111',nam:'2025 – nay',vai:'Artist Manager',viec:'Artist brand · Release',anh:['gz-sawadika','gaztik-1','gz-coming'],r:1,chu:1},
+ {id:'mikenco',ten:'Mikenco',mo:'The new gen of Northern streetwear fashion.',ky:2,mau:'#1a1512',nam:'2020 – 2023',vai:'Creative Leader',viec:'Fashion · Lookbook · Key visual',anh:['mik-angel','mik-kv','mik-duo','mik-sofa'],r:.8},
+ {id:'entropy',ten:'Entropy Cocktail Club',mo:'',ky:1,mau:'#111111',nam:'2025 – 2026',vai:'Art Director',viec:'Brand · Cocktail bar',anh:['entropy-1'],r:1.3,chu:1,logo:1},
+ {id:'freelance',ten:'Freelance Design',mo:'My beloved journey.',ky:2,mau:'#111111',nam:'2018 – 2024',vai:'Designer',viec:'Key visual · Poster · Lineup',anh:['fr-lavish','fr-hnx','fr-blackred','fr-hnx2'],r:.8,chu:1},
 ];
-const URL_ANH = n => `url(anh/${n}.webp)`;
+const ND0 = {du_an: SP0.map(o => ({id:o.id, ten:o.ten, nam:o.nam, vai_tro:o.vai, mot_dong:o.mo, mo_ta_web:'', lam_gi:[], link:'', anh:o.anh, web:{ten:o.ten, vai:o.vai, viec:o.viec, ky:o.ky, mau:o.mau, r:o.r, chu:o.chu || 0, logo:o.logo || 0}})),
+  web:{thu_tu: SP0.map(o => o.id), ky:[
+   {ten:'Creative & Art Direction', mo:'Concepts, visual direction and the look of a night, a studio or a drop.'},
+   {ten:'Brand & Marketing', mo:'Positioning, identity and campaigns that get people through the door.'},
+   {ten:'2D & Merch Design', mo:'Logos, posters, lineups and things people wear.'},
+   {ten:'Vibe Code + AI', mo:'Websites, bots and AI tools, built by talking to machines.'},
+   {ten:'Content & SEO', mo:'Writing, social and search for small local brands.'}],
+   about_vai:[['Antimusic','Founder'],['Electric Tattoo','Co-Founder'],['Điên Nặng','Founder'],['Gaztik','Artist Manager'],['The Diners Club','Creative Director'],['Mikenco','Creative Leader']],
+   lien_he:{email:'ngth.contact@gmail.com', instagram:'bluezii.papi'}, chu:{}}};
+const SUA = new URLSearchParams(location.search).has('sua');   // chế độ admin: sửa ngay trên trang
+let ND = ND0, SP = [], KY = [], KY_MO = [];
+const esc = v => String(v ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const namHien = v => String(v ?? '').replace(/\s*[–-]\s*nay$/i, ' – now');
+const C = (k, d) => (ND.web.chu && ND.web.chu[k] != null) ? ND.web.chu[k] : d;
+// S: chữ tĩnh sửa được (lưu ở web.chu); P: chữ lấy từ 1 ô dữ liệu (đường dẫn trong noi-dung.json)
+const S = (k, d, html) => `<span data-sua="web.chu.${k}"${html ? ' data-html' : ''}>${html ? C(k, d) : esc(C(k, d))}</span>`;
+const P = (duong, v, them = '') => `<span data-sua="${duong}"${them}>${esc(v)}</span>`;
+function taoSP(){
+  const w = ND.web;
+  KY = w.ky.map(k => k.ten); KY_MO = w.ky.map(k => k.mo);
+  SP = w.thu_tu.map(id => ND.du_an.find(d => d.id === id)).filter(d => d && d.web).map(d => ({id:d.id, d, ten:d.web.ten || d.ten, mo:d.mot_dong || '', ky:+d.web.ky || 0, mau:d.web.mau || '#111111',
+    nam:namHien(d.nam), vai:d.web.vai || '', viec:d.web.viec || '', anh:(d.anh && d.anh.length) ? d.anh : [''], r:+d.web.r || 1, chu:d.web.chu, logo:d.web.logo}));
+}
+taoSP();
+const ANH_TAM = {};   // ảnh vừa tải lên trong chế độ sửa (chưa có trên web thật) → hiện bằng bản trong máy
+const URL_ANH = n => !n ? 'none' : ANH_TAM[n] ? `url(${ANH_TAM[n]})` : `url(anh/${n}.webp)`;
 const giam = matchMedia('(prefers-reduced-motion:reduce)').matches;
 const dt = () => matchMedia('(max-width:760px)').matches;
 const coChuot = matchMedia('(hover:hover)').matches;
 // tối ưu 13/11: trước đây nạp sẵn cả 20 ảnh ngay lúc mở. Dải ảnh chỉ cần ảnh đầu của mỗi project (CSS tự tải);
 //   ảnh còn lại của project nào thì nạp khi rê chuột / bấm vào project đó (màn chuyển giữ 2,5 s, đủ để tải xong trước khi trang hiện).
 const daNap = new Set();
-function napAnh(s){ s.anh.forEach(n => { if (daNap.has(n)) return; daNap.add(n); const i = new Image(); i.src = `anh/${n}.webp`; }); }
+function napAnh(s){ s.anh.forEach(n => { if (!n || ANH_TAM[n] || daNap.has(n)) return; daNap.add(n); const i = new Image(); i.src = `anh/${n}.webp`; }); }
 
 // chữ xáo kiểu máy đánh chữ
 const KT = 'abcdefghijklmnopqrstuvwxyz0123456789';
@@ -420,7 +438,7 @@ const tenEl = document.getElementById('ten'), nhanky = document.getElementById('
 const tenLs = dungMix(tenEl, 'BLUEZII', KIEU_CHINH);
 if (!giam) setInterval(() => { if (!document.hidden && document.body.classList.contains('vao') && !dangMo()) doiMot(tenLs); }, 1300);   // 13/11 anh: nhảy nhanh hơn (2600 → 1300)
 let tamTruoc = null, henBoc = 0;
-function doiNhan(s){ xao(nhanky, `MEMORY Nº ${String(SP.indexOf(s) + 1).padStart(2, '0')} — ${s.ten.toUpperCase()}, ${s.nam}`, 380); }
+function doiNhan(s){ xao(nhanky, `MEMORY Nº ${String(SP.indexOf(s) + 1).padStart(2, '0')} — ${s.ten.toUpperCase()}${s.nam ? ', ' + s.nam : ''}`, 380); }
 
 // 1 · màn nạp: chữ trộn tự ghép nhanh, chốt về đúng kiểu của chữ chính
 const nap = document.getElementById('nap'), so = document.getElementById('so'), napChu = document.getElementById('napChu');
@@ -457,10 +475,10 @@ function ve(){
     const t = document.createElement('a'); t.className = 'the mo' + (s.logo ? ' logo' : ''); t.href = '#'; t._s = s;
     const h = Math.round(Math.max(H*.5, Math.min(H*.84, w/s.r)));
     t.innerHTML = `<div class="anh" style="--mau:${s.mau};--anh:${URL_ANH(s.anh[0])};height:${h}px"></div>`
-      + `<span class="tag">${KY[s.ky]}</span>`
-      + (s.chu ? '' : `<h3 class="tt"><span>${s.ten}</span></h3>`)
+      + `<span class="tag">${esc(KY[s.ky])}</span>`
+      + (s.chu ? '' : `<h3 class="tt"><span>${esc(s.ten)}</span></h3>`)
       + `<div class="xem">View project</div>`
-      + `<div class="nhan">${s.chu ? `<b>${s.ten}</b>` : ''}<span class="may">${s.viec}</span></div>`;
+      + `<div class="nhan">${s.chu ? `<b>${esc(s.ten)}</b>` : ''}<span class="may">${esc(s.viec)}</span></div>`;
     t.onclick = e => { e.preventDefault(); if (keo.di > 6) return; mo(s); };
     if (coChuot) { t.onmouseenter = () => { dung = true; napAnh(s); }; t.onmouseleave = () => { dung = false; }; }
     ray.appendChild(t);
@@ -499,23 +517,25 @@ function locKy(i){ loc = i; ky.querySelectorAll('button').forEach((z, j) => z.cl
 const dsW = document.getElementById('dsW');
 function veDs(){
   const ds = SP.map((s, i) => [s, i]).filter(([s]) => loc < 0 || s.ky === loc);
-  dsW.innerHTML = `<header class="dau"><div class="mix" data-chu="Work"></div><p>${ds.length} projects, 2018 — 2026. ${coChuot ? 'Hover to remember, click to go in.' : 'Tap to go in.'}</p></header>`
+  dsW.innerHTML = `<header class="dau"><div class="mix" data-chu="Work"></div><p>${ds.length} projects, ${S('works_nam', '2018 — 2026')}. ${coChuot ? 'Hover to remember, click to go in.' : 'Tap to go in.'}</p></header>`
     + `<div class="ds">${ds.map(([s, i], n) => `<a href="#" class="hang" data-sp="${i}" data-anh="${s.anh[0]}" data-logo="${s.logo ? 1 : ''}">
-      <span class="may">${String(n + 1).padStart(2, '0')}</span><b>${s.ten}</b><span class="p2">${KY[s.ky]}</span><span class="p2 may an">${s.nam}</span><span class="p2 an">${s.vai}</span></a>`).join('')}</div>`;
+      <span class="may">${String(n + 1).padStart(2, '0')}</span><b>${esc(s.ten)}</b><span class="p2">${esc(KY[s.ky])}</span><span class="p2 may an">${esc(s.nam)}</span><span class="p2 an">${esc(s.vai)}</span></a>`).join('')}</div>`;
   const m = dsW.querySelector('.mix'); dungMix(m, 'Work', TRANG.works.kieu, 0); m.classList.add('vao');
   dsW.querySelectorAll('.hang').forEach(r => {
     r.onclick = e => { e.preventDefault(); an(); mo(SP[+r.dataset.sp]); };
     if (coChuot) { r.onmouseenter = e => { xt.style.setProperty('--anh', URL_ANH(r.dataset.anh)); xt.style.backgroundSize = r.dataset.logo ? '70% auto' : 'cover'; xt.style.transform = `translate(${e.clientX + 24}px,${e.clientY - 95}px)`; xt.classList.add('on'); }; r.onmouseleave = an; }
   });
+  window.__sauDung && window.__sauDung('ds');
 }
 function denDs(){ dsW.scrollIntoView({behavior: giam ? 'auto' : 'smooth'}); }
 document.getElementById('xuong').onclick = e => { e.preventDefault(); denDs(); };
 // Work = trang này: đang mở trang khác thì đóng lại về đầu trang memory; đang ở đầu trang rồi thì trượt xuống danh sách
 function veWork(){ if (da.classList.contains('on')) { dong(); scrollTo(0, 0); } else if (scrollY < 40) denDs(); else scrollTo({top:0, behavior: giam ? 'auto' : 'smooth'}); }
-['All', ...KY].forEach((k, i) => { const b = document.createElement('button');
+function veKy(){ ky.innerHTML = ''; if (loc >= KY.length) loc = -1;
+  ['All', ...KY].forEach((k, i) => { const b = document.createElement('button');
   const n = i ? SP.filter(s => s.ky === i - 1).length : SP.length;
-  b.innerHTML = `${k}<sup>${n}</sup>`; if (!i) b.classList.add('on');
-  b.onclick = () => locKy(i - 1); if (!n) b.hidden = true; ky.appendChild(b); });
+  b.innerHTML = `${esc(k)}<sup>${n}</sup>`; if (i === loc + 1) b.classList.add('on');
+  b.onclick = () => locKy(i - 1); if (!n) b.hidden = true; ky.appendChild(b); }); }
 
 // 3 · v6: 4 trang luôn hiện ở cột phải; bấm trang đang mở thì thôi
 const ben = document.getElementById('ben');
@@ -544,7 +564,7 @@ function chuyen(ten, mau, anh, dung, giu = 2500){
 }
 const mo = s => { napAnh(s); chuyen(s.ten, s.mau, s.anh[0], () => dungTrang(s)); };
 // sửa 13/11: tên dài (Electric Tattoo, Freelance Posters) trước đây bị cắt mất chữ cuối trên máy tính và ngắt giữa từ trên điện thoại → gói từng từ (không ngắt giữa từ), dungTrang tự thu cỡ chữ cho vừa bề ngang
-function chu(t){ let i = 0; return t.split(' ').map(w => `<b>${[...w].map(c => `<span style="transition-delay:${(i++)*.035}s">${c}</span>`).join('')}</b>`).join(' '); }
+function chu(t){ let i = 0; return t.split(' ').map(w => `<b>${[...w].map(c => `<span style="transition-delay:${(i++)*.035}s">${esc(c)}</span>`).join('')}</b>`).join(' '); }
 let io;
 function moKhung(cls, html){
   da.className = 'da ' + cls; da.innerHTML = `<button class="dong-n">Close ✕</button>` + html;
@@ -563,15 +583,17 @@ da.addEventListener('scroll', loRa, {passive:true}); addEventListener('scroll', 
 function dungTrang(s){
   const k = SP.indexOf(s), sau = SP[(k+1) % SP.length];
   const phu = [1, 2, 3].map(j => s.anh[j % s.anh.length]);
-  moKhung(s.logo ? 'logo' : '', `<div class="phu"><i style="--anh:${URL_ANH(s.anh[0])}"></i><span class="tag">${KY[s.ky]}</span></div><h1 class="to">${chu(s.ten.toUpperCase())}</h1>
-  <div class="tt hien">${s.nam ? `<div><small>Year</small>${s.nam}</div>` : ''}${s.vai ? `<div><small>Role</small>${s.vai}</div>` : ''}<div><small>Did</small>${s.viec}</div></div>
-  ${s.mo ? `<p class="mt hien">${s.mo}</p>` : ''}
+  const g = `du_an.${s.id}`;   // 13/11 admin: mỗi ô chữ gắn đường dẫn dữ liệu để sửa ngay trên trang
+  moKhung(s.logo ? 'logo' : '', `<div class="phu"><i style="--anh:${URL_ANH(s.anh[0])}"></i><span class="tag">${esc(KY[s.ky])}</span></div><h1 class="to">${SUA ? P(g + '.web.ten', s.ten) : chu(s.ten.toUpperCase())}</h1>
+  <div class="tt hien">${s.nam || SUA ? `<div><small>Year</small>${P(g + '.nam', SUA ? s.d.nam : s.nam)}</div>` : ''}${s.vai || SUA ? `<div><small>Role</small>${P(g + '.web.vai', s.vai)}</div>` : ''}<div><small>Did</small>${P(g + '.web.viec', s.viec)}</div></div>
+  ${s.mo || SUA ? `<p class="mt hien">${P(g + '.mot_dong', s.mo)}</p>` : ''}
   <div class="luoi">${phu.map(n => `<div style="--anh:${URL_ANH(n)}"></div>`).join('')}</div>
-  <div class="tiep to hien" data-sp="${(k+1) % SP.length}"><span>Next →</span><span>${sau.ten}</span></div>`);
+  <div class="tiep to hien" data-sp="${(k+1) % SP.length}"><span>Next →</span><span>${esc(sau.ten)}</span></div>`);
   da.style.setProperty('--mau', s.mau);
   { const h1 = da.querySelector('h1'); for (let k = 0; k < 14 && h1.scrollWidth > h1.clientWidth + 1; k++) h1.style.fontSize = parseFloat(getComputedStyle(h1).fontSize)*.93 + 'px'; }   // thu cỡ chữ tới khi tên vừa bề ngang
   const i = da.querySelector('.phu i');
   da.onscroll = () => { const y = da.scrollTop; i.style.transform = `translateY(${y*.35}px) scale(${1 + y/3000})`; };
+  window.__sauDung && window.__sauDung('du-an', s);
 }
 
 // ===== các trang menu =====
@@ -586,22 +608,23 @@ function moTrang(k){ if (k === 'works') { veWork(); return; } an(); chuyen(TRANG
 function dungMenu(k){
   let h = '';
   if (k === 'works') {
-    h = dauTrang(k, `${SP.length} projects, 2018 — 2026. Hover to remember, click to go in.`)
+    h = dauTrang(k, `${SP.length} projects, ${S('works_nam', '2018 — 2026')}. Hover to remember, click to go in.`)
       + `<div class="ds">${SP.map((s, i) => `<a href="#" class="hang hien" data-sp="${i}" data-anh="${s.anh[0]}" data-logo="${s.logo ? 1 : ''}">
-        <span class="may">${String(i + 1).padStart(2, '0')}</span><b>${s.ten}</b><span class="p2">${KY[s.ky]}</span><span class="p2 may an">${s.nam}</span><span class="p2 an">${s.vai}</span></a>`).join('')}</div>`;
+        <span class="may">${String(i + 1).padStart(2, '0')}</span><b>${esc(s.ten)}</b><span class="p2">${esc(KY[s.ky])}</span><span class="p2 may an">${esc(s.nam)}</span><span class="p2 an">${esc(s.vai)}</span></a>`).join('')}</div>`;
   } else if (k === 'skills') {
-    h = dauTrang(k, `${KY.length} things I do, and the work that proves it.`)
+    h = dauTrang(k, `${KY.length} ${S('skills_loi', 'things I do, and the work that proves it.')}`)
       + `<div class="kn">${KY.map((t, i) => `<section class="hien"><span class="may">${String(i + 1).padStart(2, '0')}</span>
-        <div><h2 class="to">${t}</h2></div>
-        <div><p>${KY_MO[i]}</p><div class="mini">${SP.map((s, j) => s.ky !== i ? '' : `<button class="${s.logo ? 'logo' : ''}" data-sp="${j}"><i style="--anh:${URL_ANH(s.anh[0])}"></i><span>${s.ten}</span></button>`).join('')}</div></div></section>`).join('')}</div>`;
+        <div><h2 class="to">${P(`web.ky.${i}.ten`, t)}</h2></div>
+        <div><p>${P(`web.ky.${i}.mo`, KY_MO[i])}</p><div class="mini">${SP.map((s, j) => s.ky !== i ? '' : `<button class="${s.logo ? 'logo' : ''}" data-sp="${j}"><i style="--anh:${URL_ANH(s.anh[0])}"></i><span>${esc(s.ten)}</span></button>`).join('')}</div></div></section>`).join('')}</div>`;
   } else if (k === 'about') {
-    h = dauTrang(k, `Bluezii (Trung Hiếu). Hanoi.`)
-      + `<div class="ab"><p class="loi hien">I run <span class="dao">venues</span>, ink and <em>noise</em> in Hanoi — and build the <u>brands</u>, posters, bots and websites around them. <s>Normal</s> is not the brief.</p>
-        <ul class="hien">${[['Antimusic','Founder'],['Electric Tattoo','Co-Founder'],['Điên Nặng','Founder'],['Gaztik','Artist Manager'],['The Diners Club','Creative Director'],['Mikenco','Creative Leader']].map(([a, b]) => `<li><b>${a}</b><span>${b}</span></li>`).join('')}</ul></div>`;
+    h = dauTrang(k, S('about_dau', 'Bluezii (Trung Hiếu). Hanoi.'))
+      + `<div class="ab"><p class="loi hien">${S('about_loi', 'I run <span class="dao">venues</span>, ink and <em>noise</em> in Hanoi — and build the <u>brands</u>, posters, bots and websites around them. <s>Normal</s> is not the brief.', 1)}</p>
+        <ul class="hien">${ND.web.about_vai.map(([a, b], i) => `<li><b>${P(`web.about_vai.${i}.0`, a)}</b>${P(`web.about_vai.${i}.1`, b)}</li>`).join('')}</ul></div>`;
   } else {
-    h = dauTrang(k, `Brand, art direction, merch, web. Hanoi or remote.`)
-      + `<div class="lt"><a class="mail hien" href="mailto:ngth.contact@gmail.com">ngth.contact@<wbr>gmail.com</a>
-        <div class="luoi2 hien"><div><small>Instagram</small><a href="https://instagram.com/bluezii.papi" target="_blank" rel="noopener">@bluezii.papi</a></div><div><small>Based in</small>Hanoi, Vietnam</div><div><small>Open for</small>Art direction · Brand · Merch · Web</div></div></div>`;
+    const lh = ND.web.lien_he;
+    h = dauTrang(k, S('talk_dau', 'Brand, art direction, merch, web. Hanoi or remote.'))
+      + `<div class="lt"><a class="mail hien" href="mailto:${esc(lh.email)}">${SUA ? P('web.lien_he.email', lh.email) : esc(lh.email).replace('@', '@<wbr>')}</a>
+        <div class="luoi2 hien"><div><small>Instagram</small><a href="https://instagram.com/${esc(lh.instagram)}" target="_blank" rel="noopener">@${P('web.lien_he.instagram', lh.instagram)}</a></div><div><small>Based in</small>${S('noi_o', 'Hanoi, Vietnam')}</div><div><small>Open for</small>${S('nhan_viec', 'Art direction · Brand · Merch · Web')}</div></div></div>`;
   }
   moKhung('trang-' + k, h);
   da.style.setProperty('--mau', '#111214');
@@ -612,6 +635,7 @@ function dungMenu(k){
       r.onmouseleave = an;
     });
   }
+  window.__sauDung && window.__sauDung(k);
 }
 const xt = document.getElementById('xemtruoc');
 function an(){ xt.classList.remove('on'); }
@@ -620,7 +644,24 @@ addEventListener('mousemove', e => { if (xt.classList.contains('on')) xt.style.t
 function dong(){ if (!da.classList.contains('on')) return; an(); da.classList.add('dong'); document.body.classList.remove('trong'); danhDau(null); setTimeout(() => { da.className = 'da'; da.innerHTML = ''; }, 700); }
 addEventListener('keydown', e => { if (e.key === 'Escape') dong(); });
 let rs, rongCu = innerWidth; addEventListener('resize', () => { if (dt() && innerWidth === rongCu && the.length) return; rongCu = innerWidth; clearTimeout(rs); rs = setTimeout(ve, 200); });   // 13/11: điện thoại cuộn làm thanh địa chỉ co giãn (chỉ đổi chiều cao) thì không dựng lại dải ảnh
-ve(); veDs(); danhDau(null); requestAnimationFrame(chay);
+// 13/11 admin: tải noi-dung.json trước rồi mới dựng (chế độ sửa + có mã GitHub thì đọc thẳng bản mới nhất trên GitHub, khỏi chờ web cập nhật)
+function khoGH(){ try { const l = localStorage.getItem('bz_kho'); if (l) return l; } catch (e) {}
+  const h = location.hostname; if (h.endsWith('.github.io')) { const o = h.split('.')[0], seg = location.pathname.split('/')[1]; return `${o}/${seg && seg !== 'web' && !seg.includes('.') ? seg : o + '.github.io'}`; }
+  return 'Trnghxx/bluezii-portfolio'; }
+async function napND(){
+  let ma = null; try { ma = SUA && localStorage.getItem('bz_ma'); } catch (e) {}
+  if (ma) { try { const r = await fetch(`https://api.github.com/repos/${khoGH()}/contents/bao-tang/noi-dung.json?ref=main&t=${Date.now()}`, {headers:{Authorization:'Bearer ' + ma, Accept:'application/vnd.github.raw+json'}, cache:'no-store'}); if (r.ok) return await r.json(); } catch (e) {} }
+  const r = await fetch('../bao-tang/noi-dung.json', {cache:'no-cache'}); if (!r.ok) throw 0; return r.json();
+}
+function apChuTinh(){   // chữ nằm sẵn trong HTML (không dựng bằng JS)
+  document.querySelectorAll('body > :not(.da) [data-sua^="web.chu."]').forEach(el => { const k = el.dataset.sua.slice(8); if (ND.web.chu && ND.web.chu[k] != null) { if (el.hasAttribute('data-html')) el.innerHTML = ND.web.chu[k]; else el.textContent = ND.web.chu[k]; } });
+  const lh = ND.web.lien_he || {}; if (lh.email) document.getElementById('chanMail').href = 'mailto:' + lh.email; if (lh.instagram) document.getElementById('chanIG').href = 'https://instagram.com/' + lh.instagram;
+}
+function dungLai(){ taoSP(); veKy(); ve(); veDs(); apChuTinh(); }
+window.__bz = {get ND(){ return ND; }, set ND(v){ ND = v; }, get SP(){ return SP; }, taoSP, dungLai, ve, veDs, veKy, mo, dungTrang, dungMenu, moTrang, dong, esc, namHien, ANH_TAM, khoGH, da, SUA};
+napND().then(v => { if (v && v.du_an && v.web) { ND = v; ND.web.chu = ND.web.chu || {}; ND.web.about_vai = ND.web.about_vai || ND0.web.about_vai; ND.web.lien_he = ND.web.lien_he || ND0.web.lien_he; } }).catch(() => {})
+  .finally(() => { dungLai(); danhDau(null); requestAnimationFrame(chay);
+    if (SUA) { const sc = document.createElement('script'); sc.src = 'sua.js?v=' + Date.now(); document.body.appendChild(sc); } });
 window.__mo = i => mo(SP[i]); window.__trang = k => moTrang(k);
 // ===== 13/11: nói chuyện với trang mẹ (bản gộp) =====
 const coMe = parent !== window, veBTn = document.getElementById('veBT'), nhacW = document.getElementById('nhacW');

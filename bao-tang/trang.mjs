@@ -12,13 +12,13 @@ const $ = id => document.getElementById(id);
 const cv = $('bGl');
 // ---------- nội dung: noi-dung.json, bỏ Diners, xếp năm giảm dần ----------
 const COSO = new URL('./', import.meta.url).href;   // gop-3: mọi tài nguyên nằm trong bao-tang/
-const nd = await fetch(COSO + 'noi-dung.json').then(r => r.json());
+const nd = await fetch(COSO + 'noi-dung.json', { cache: 'no-cache' }).then(r => r.json());   // 13/11 admin: luôn hỏi lại bản mới (anh sửa qua ?sua)
 const namDau = d => +((d.nam || '').match(/\d{4}/)?.[0] || 0);
 // bản 6: thứ tự do chủ dự án chốt (không xếp theo năm). Other Projects chưa có trong noi-dung.json → tạo tại đây, nội dung chờ điền.
 const THU_TU = ['antimusic', 'electric', 'dien-nang', 'gaztik', 'mikenco', 'freelance'];   // 13/11 anh: bỏ cột Other Projects
 const OTHER = { id: 'other', ten: 'Other Projects', nam: '[...]', vai_tro: '[...]', mot_dong: 'Click to view more projects', mo_ta_web: '[...]', lam_gi: ['[...]'], link: '' };
 const duAn = THU_TU.map(id => id === 'other' ? OTHER : nd.du_an.find(d => d.id === id)).filter(Boolean);
-const nhieu = nd.du_an.find(d => !namDau(d)) || { ten: '& many many more…' };
+const nhieu = nd.du_an.find(d => d.id === 'va-nua') || { ten: '& many many more…' };   // 13/11: Entropy chưa có năm → không lấy 'dự án không năm' nữa
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 $('tinhDs').innerHTML = duAn.map((d, i) => `<li><span>${String(i + 1).padStart(2, '0')}</span>${esc(d.ten)}</li>`).join('');
 // bản tĩnh trước khi tải three.js
@@ -281,7 +281,8 @@ async function moThe(i) {
   if (t.da.id === 'other') { moFinder(); return; }
   const d = t.da, f = await doFile(d.id);
   const lam = (d.lam_gi || []).filter(x => x && x !== '[...]').map(x => `<li>${esc(x)}</li>`).join('');
-  if (!f.anh.length && ANH_WEB[d.id]) f.anh = ANH_WEB[d.id].map(n => COSO + '../web/anh/' + n + '.webp');
+  const dsAnh = d.anh || ANH_WEB[d.id];   // 13/11 admin: ảnh lấy từ noi-dung.json (chung với web), không có thì dùng danh sách cũ
+  if (!f.anh.length && dsAnh) f.anh = dsAnh.map(n => COSO + '../web/anh/' + n + '.webp');
   const oTrong = (loai, k, duoi) => `<figure><div class="o${loai === 'Video' ? ' vid' : ''}">${loai} ${k} · not added yet<small>noi-dung/anh/${esc(d.id)}/${k}.${duoi}</small></div></figure>`;
   const anh = f.anh.length ? f.anh.map((u, k) => `<figure><div class="o"><img src="${u}" alt="${esc(d.ten)}, photo ${k + 1}" loading="lazy"></div><figcaption>${String(k + 1).padStart(2, '0')}</figcaption></figure>`).join('') : [1, 2, 3].map(k => oTrong('Photo', k, 'jpg')).join('');
   const vid = f.vid.length ? f.vid.map(u => `<figure><div class="o vid"><video src="${u}" controls playsinline preload="metadata"></video></div></figure>`).join('') : oTrong('Video', 1, 'mp4');
