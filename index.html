@@ -610,7 +610,7 @@ function cheDoPL(){ if (audio) audio.loop = false; if (e85) e85.loop = false; if
 window.__phatBai = phatBai;
 window.__playlist = () => ({ds: PLAYLIST, bai: baiDang(), ten: tenDang(), am: amBat, tron});
 const PL = document.createElement('div'); PL.id = 'plW';
-PL.innerHTML = `<div id="plDs" role="dialog" aria-label="Playlist"><div class="plDau"><p class="pt">Playlist · ${PLAYLIST.length} tracks</p><button type="button" id="plTron" aria-pressed="false"><span aria-hidden="true">⤨</span> Shuffle</button></div><div id="plHang"></div></div>`
+PL.innerHTML = `<div id="plDs" role="dialog" aria-label="Playlist"><div class="plDau"><p class="pt">Playlist · ${PLAYLIST.length} tracks</p><span class="plNutP"><button type="button" id="plTron" aria-pressed="false"><span aria-hidden="true">⤨</span> Shuffle</button><button type="button" id="plTat">Mute</button></span></div><div id="plHang"></div></div>`
   + `<button type="button" id="plNut" aria-expanded="false" aria-controls="plDs"><span class="eq"><i></i><i></i><i></i></span><b>Playlist</b><em id="plTen"></em><span class="mui" aria-hidden="true">▾</span></button>`;
 document.body.appendChild(PL);
 const plNut = document.getElementById('plNut'), plHang = document.getElementById('plHang');
@@ -618,20 +618,24 @@ function vePL(){
   const dang = baiDang(); document.getElementById('plTron').setAttribute('aria-pressed', tron);
   plHang.innerHTML = PLAYLIST.map((b, i) => `<button type="button" data-id="${b.id || ''}" ${b.id ? '' : 'disabled'} class="${b.id && b.id === dang ? 'on' : ''}"><span class="so">${String(i + 1).padStart(2, '0')}</span><span class="tc"><span class="tb">${b.ten}</span><span class="ca">${b.ca}</span></span></button>`).join('');
   document.getElementById('plTen').textContent = tenDang();
-  PL.classList.toggle('chay', amBat);
+  PL.classList.toggle('chay', amBat); veNhanPL();
 }
+// 13/11 anh: gộp nút Sound vào nút Playlist. Đang tắt tiếng: nút ghi "Sound off", bấm = bật tiếng. Đang có tiếng: bấm = mở danh sách bài (trong đó có nút Mute)
+function veNhanPL(){ PL.classList.toggle('tat', !amBat); plNut.querySelector('b').textContent = amBat ? 'Playlist' : 'Sound off'; plNut.setAttribute('aria-label', amBat ? 'Playlist' : 'Turn sound on'); }
 document.getElementById('plTron').addEventListener('click', () => batTron());
 plHang.addEventListener('click', e => { const b = e.target.closest('button[data-id]'); if (b && b.dataset.id) phatBai(b.dataset.id); });
 const moPL = on => { PL.classList.toggle('mo', on); plNut.setAttribute('aria-expanded', on); };
-plNut.addEventListener('click', e => { e.stopPropagation(); vePL(); moPL(!PL.classList.contains('mo')); });
+plNut.addEventListener('click', e => { e.stopPropagation(); if (!amBat) { NUT.click(); moPL(false); vePL(); return; } vePL(); moPL(!PL.classList.contains('mo')); });
+document.getElementById('plTat').addEventListener('click', () => { if (amBat) NUT.click(); moPL(false); vePL(); });
 PL.addEventListener('pointerdown', e => e.stopPropagation());
 addEventListener('pointerdown', () => PL.classList.contains('mo') && moPL(false));
 addEventListener('keydown', e => { if (e.key === 'Escape') moPL(false); });
-setInterval(() => { if (!PL.classList.contains('mo')) { document.getElementById('plTen').textContent = tenDang(); PL.classList.toggle('chay', amBat); } }, 700);
+setInterval(() => { if (!PL.classList.contains('mo')) { document.getElementById('plTen').textContent = tenDang(); PL.classList.toggle('chay', amBat); } veNhanPL(); }, 700);
 vePL();
 { const st = document.createElement('style'); st.textContent = `
 #phongNhac,#naoNhac,#nutNhac{display:none!important}
-#plW{position:fixed;z-index:74;right:calc(max(40px,env(safe-area-inset-right,0px)) + 126px);bottom:calc(env(safe-area-inset-bottom,0px) + 30px);opacity:0;pointer-events:none;transition:opacity .4s}
+#am.goc.dp{display:none!important}
+#plW{position:fixed;z-index:74;right:max(40px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 30px);opacity:0;pointer-events:none;transition:opacity .4s}
 body.hien:not(.oweb):not(.coLop) #plW{opacity:1;pointer-events:auto}
 #plNut{height:44px;display:inline-flex;align-items:center;gap:10px;padding:0 14px;background:rgba(11,11,12,.42);border:1px solid rgba(244,243,238,.16);color:#f4f3ee;cursor:pointer;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);max-width:min(340px,calc(100vw - 180px))}
 #plNut:hover,#plNut:focus-visible,#plW.mo #plNut{border-color:rgba(244,243,238,.5);outline:0}
@@ -651,7 +655,9 @@ body.hien:not(.oweb):not(.coLop) #plW{opacity:1;pointer-events:auto}
 #plHang button:hover:not(:disabled){border-color:#f4f3ee}
 #plHang button.on{background:#f4f3ee;color:#0b0b0c}#plHang button.on .so,#plHang button.on .ca{opacity:.7}
 #plHang button:disabled{opacity:.35;cursor:not-allowed}
-@media (max-width:700px){#plW{right:calc(max(12px,env(safe-area-inset-right,0px)) + 132px);bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 12px)}
+#plW.tat .mui,#plW.tat em{display:none}#plW:not(.tat) #plNut{background:#f4f3ee;color:#0b0b0c;border-color:#f4f3ee}
+#plDs .plNutP{display:flex;gap:6px}#plTat{height:32px;padding:0 10px;background:none;border:1px solid rgba(244,243,238,.3);color:inherit;cursor:pointer;font:400 10px/1 'Space Mono',monospace;letter-spacing:.06em;text-transform:uppercase}#plTat:hover{border-color:#f4f3ee}
+@media (max-width:700px){#plW{right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 12px)}
   #plNut{padding:0 12px;max-width:calc(100vw - 160px)}#plNut em{display:none}
   #plDs{position:fixed;right:12px;left:12px;width:auto;bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 64px);max-height:calc(100vh - 200px)}
   #plHang button{min-height:44px}}`; document.head.appendChild(st); }
@@ -735,7 +741,7 @@ function doiBT(vao) {
   trongBT = vao; document.body.classList.toggle('bt', vao); document.body.classList.toggle('btvao', vao);
   const g = document.getElementById('bt3');
   if (vao) {
-    window.__trongNao = false; document.body.classList.remove('nao');
+    window.__trongNao = false; document.body.classList.remove('nao'); window.__amKet && window.__amKet(0, 0);   // 13/11: tắt ngay tiếng lửa khi vào bảo tàng
     g && g.classList.add('hien'); BT.vao(0); BT.chay();
     clearTimeout(hMat); hMat = setTimeout(() => { if (trongBT && window.__naoGPU && !naoMat) { window.__naoGPU.mat(); naoMat = true; } }, 800);
     if (!window.__webTruoc) { window.__webTruoc = 1; setTimeout(() => { const l = document.createElement('link'); l.rel = 'prefetch'; l.href = 'web/index.html'; document.head.appendChild(l); }, 5000); }   // tối ưu 13/11: tải trước trang web trắng lúc rảnh
@@ -909,6 +915,7 @@ body.oweb #dsMenu{display:none}
 /* 13/11 (lỗi 1): vuốt trên cảnh 3D do trang tự xử lý (xoay / cuộn) → trình duyệt không chen cử chỉ riêng (vuốt ngang = lùi trang, kéo-để-tải-lại) */
 canvas{touch-action:none}
 body.coLop #nhay,body.coLop #dsMenu{display:none!important}
+@media (max-aspect-ratio:1/1){#bt3 #bang{padding-bottom:calc(env(safe-area-inset-bottom,0px) + var(--thanh,0px) + 70px)!important;max-height:52vh!important}}   /* 13/11: nút Open the file không bị nút nhạc đè */
 body:has(#bThe.mo,#finder.mo) #nhay,body:has(#bThe.mo,#finder.mo) #dsMenu{display:none!important}
 /* 13/11 (lỗi 4): điện thoại — menu thành thanh đen dưới đáy, giống thanh của web trắng; --thanh = chiều cao thanh, các nút bám đáy (khung.mjs) cộng thêm */
 @media (max-width:700px){

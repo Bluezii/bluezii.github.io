@@ -2566,7 +2566,7 @@ Promise.allSettled(MUON_MH.map(f => f().catch(e => console.error(e)))).then(asyn
     const g = ac.createGain(); g.gain.setValueAtTime(.32 * m, t); g.gain.setValueAtTime(.0001, t + dai); n.connect(bp).connect(g).connect(a.ra); n.start(t, Math.random()); n.stop(t + dai + .01);
     if (Math.random() < .35) { const o = ac.createOscillator(); o.type = 'square'; o.frequency.value = 120 + Math.random() * 900; const g2 = ac.createGain(); g2.gain.setValueAtTime(.06 * m, t); g2.gain.setValueAtTime(.0001, t + dai * .7); o.connect(g2).connect(a.ra); o.start(t); o.stop(t + dai); } }
   function batLua(a) { const ac = a.ac, t = ac.currentTime, ra = ac.createGain(); ra.gain.value = 0; ra.connect(a.ra);
-    const n = ac.createBufferSource(); n.buffer = nhieu(ac); n.loop = true; const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; n.connect(lp).connect(ra);   // tiếng lửa ầm trầm
+    const n = ac.createBufferSource(); n.buffer = nhieu(ac); n.loop = true; const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; const hpL = ac.createBiquadFilter(); hpL.type = 'highpass'; hpL.frequency.value = 160; const gL = ac.createGain(); gL.gain.value = .45; n.connect(hpL).connect(lp).connect(gL).connect(ra);   // tiếng lửa ầm trầm (13/11: cắt tần thấp + nhỏ lại, loa điện thoại nghe thành ù)
     const n2 = ac.createBufferSource(); n2.buffer = nhieu(ac); n2.loop = true; const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2200; bp.Q.value = .7; const g2 = ac.createGain(); g2.gain.value = .22; n2.connect(bp).connect(g2).connect(ra);   // tiếng xèo
     n.start(t); n2.start(t, .7);
     const w = ac.createBufferSource(); w.buffer = nhieu(ac); const wb = ac.createBiquadFilter(); wb.type = 'bandpass'; wb.Q.value = 1.2; wb.frequency.setValueAtTime(250, t); wb.frequency.exponentialRampToValueAtTime(2600, t + .9);   // phừng
@@ -2575,7 +2575,9 @@ Promise.allSettled(MUON_MH.map(f => f().catch(e => console.error(e)))).then(asyn
   function tach(a, k) { const ac = a.ac, t = ac.currentTime, dai = .006 + Math.random() * .02;
     const n = ac.createBufferSource(); n.buffer = nhieu(ac); const hp = ac.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 1200 + Math.random() * 3500;
     const g = ac.createGain(); g.gain.setValueAtTime((.12 + Math.random() * .3) * Math.min(1, .3 + k), t); g.gain.exponentialRampToValueAtTime(.0001, t + dai); n.connect(hp).connect(g).connect(a.ra); n.start(t, Math.random() * 1.5); n.stop(t + dai + .01); }
-  window.__amKet = (qq, dtr) => {
+  let tCuoi = 0;   // 13/11 lỗi ù: rời não sang bảo tàng thì vòng não ngừng gọi → lửa kêu mãi. Canh: quá 0,4 s không được gọi thì tự tắt
+  setInterval(() => { if (lua && performance.now() - tCuoi > 400) window.__amKet(0, 0); }, 250);
+  window.__amKet = (qq, dtr) => { tCuoi = performance.now();
     const a = window.__amThanh && window.__amThanh();
     const tat = () => { if (lua) { lua.dung(); lua = null; } if (daHa && a && a.nhac) { a.nhac.gain.setTargetAtTime(.9, a.ac.currentTime, .4); daHa = false; } };
     if (!a || !window.__trongNao || qq < .82) { tat(); return; }
